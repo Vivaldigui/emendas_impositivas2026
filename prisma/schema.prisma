@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Vereador {
+  id        String   @id
+  nome      String
+  nomeCurto String
+  partido   String?
+  foto      String
+  emendas   Emenda[]
+}
+
+model Emenda {
+  id              String                 @id
+  vereadorId      String
+  vereador        Vereador               @relation(fields: [vereadorId], references: [id])
+  descricao       String                 @db.Text
+  valorAutorizado Decimal                @db.Decimal(16, 2)
+  area            String
+  secretaria      String
+  codigo          String?
+  acao            String?
+  dotacao         String?
+  fonteDocumento  String
+  vinculos        EmendaEmpenhoVinculo[]
+
+  @@index([vereadorId])
+  @@index([area])
+  @@index([acao])
+}
+
+model Empenho {
+  id                String                 @id
+  ano               Int
+  numeroEmpenho     String?
+  dataEmpenho       DateTime?
+  fornecedor        String?
+  cnpjCpfFornecedor String?
+  historico         String?                @db.Text
+  secretaria        String?
+  dotacao           String?
+  ficha             String?
+  processoCompra    String?
+  valorEmpenhado    Decimal                @default(0) @db.Decimal(16, 2)
+  valorLiquidado    Decimal                @default(0) @db.Decimal(16, 2)
+  valorPago         Decimal                @default(0) @db.Decimal(16, 2)
+  situacao          String?
+  fonte             String
+  hashArquivo       String?
+  linhaBruta        Json?
+  vinculos          EmendaEmpenhoVinculo[]
+
+  @@index([ano, numeroEmpenho])
+  @@index([fornecedor])
+  @@index([dotacao])
+}
+
+model EmendaEmpenhoVinculo {
+  id         String  @id @default(cuid())
+  emendaId   String
+  emenda     Emenda  @relation(fields: [emendaId], references: [id], onDelete: Cascade)
+  empenhoId  String
+  empenho    Empenho @relation(fields: [empenhoId], references: [id], onDelete: Cascade)
+  criterio   String
+  confianca  Decimal @db.Decimal(5, 2)
+  observacao String  @db.Text
+
+  @@unique([emendaId, empenhoId])
+  @@index([criterio])
+}
+
+model ColetaEmpenhosArquivo {
+  id              String   @id @default(cuid())
+  inicio          DateTime
+  fim             DateTime
+  formato         String
+  fonte           String
+  endpoint        String?
+  parametrosJson  Json
+  hashArquivo     String   @unique
+  caminhoArquivo  String
+  contentType     String?
+  dataColeta      DateTime @default(now())
+  status          String
+  erro            String?
+  registrosBrutos Int      @default(0)
+  registrosImportados Int  @default(0)
+
+  @@index([inicio, fim])
+  @@index([dataColeta])
+}
+
+model ColetaLog {
+  id          String   @id @default(cuid())
+  coletor     String
+  status      String
+  inicioEm    DateTime @default(now())
+  fimEm       DateTime?
+  mensagem    String?
+  erro        String?  @db.Text
+  metadados   Json?
+
+  @@index([coletor, status])
+  @@index([inicioEm])
+}

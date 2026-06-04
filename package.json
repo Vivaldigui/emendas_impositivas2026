@@ -1,0 +1,50 @@
+{
+  "name": "emendas-itanhandu",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test": "tsx src/scripts/checkSeed.ts && tsx src/scripts/testParserMatcher.ts",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev --name init",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:verify": "tsx scripts/verify-prisma.ts",
+    "db:studio": "prisma studio",
+    "collect:empenhos": "tsx src/collectors/sonner/empenhosCollector.ts",
+    "collect:empenhos:debug": "tsx src/collectors/sonner/empenhosCollector.ts --modo=playwright --debug",
+    "collect:empenhos:daily": "tsx src/collectors/sonner/empenhosCollector.ts --inicio=2026-01-01 --fim=hoje --formato=excel --modo=auto"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "cheerio": "^1.2.0",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.2.1",
+    "dotenv": "^17.4.2",
+    "lucide-react": "^1.16.0",
+    "next": "16.2.6",
+    "pg": "^8.21.0",
+    "playwright": "^1.60.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "recharts": "^3.8.1",
+    "xlsx": "^0.18.5",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20.19.41",
+    "@types/pg": "^8.20.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.6",
+    "prisma": "^7.8.0",
+    "tailwindcss": "^4",
+    "tsx": "^4.22.4",
+    "typescript": "^5"
+  }
+}

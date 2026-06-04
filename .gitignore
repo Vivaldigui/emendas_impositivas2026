@@ -1,0 +1,10 @@
+.next/
+node_modules/
+dist/
+coverage/
+.env
+.env*.local
+*.log
+screenshots-*.png
+storage/sonner/empenhos/*
+!storage/sonner/empenhos/.gitkeep

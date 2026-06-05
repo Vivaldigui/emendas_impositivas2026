@@ -39,6 +39,7 @@ let dashboardCache:
 
 export function invalidateDashboardCache() {
   dashboardCache = null;
+  emendasResumoCache = null;
 }
 
 export async function getDashboardData() {
@@ -95,7 +96,26 @@ export async function getVereadoresResumo() {
   return summarizeVereadores(resumo, vereadoresList);
 }
 
+// Cache do resumo sem filtros — usado por /emendas/[id] e /vereadores/[id].
+// Esses caminhos não passam pelo cache do dashboard, por isso precisam do seu.
+const EMENDAS_RESUMO_CACHE_TTL_MS = 5 * 60_000;
+let emendasResumoCache:
+  | { ts: number; data: Awaited<ReturnType<typeof computeEmendasResumo>> }
+  | null = null;
+
 export async function getEmendasResumo(filters: EmendasFilters = {}) {
+  const hasFilters = Boolean(filters.vereadorId || filters.area || filters.situacao || filters.q);
+  if (!hasFilters && emendasResumoCache && Date.now() - emendasResumoCache.ts < EMENDAS_RESUMO_CACHE_TTL_MS) {
+    return emendasResumoCache.data;
+  }
+  const data = await computeEmendasResumo(filters);
+  if (!hasFilters) {
+    emendasResumoCache = { ts: Date.now(), data };
+  }
+  return data;
+}
+
+async function computeEmendasResumo(filters: EmendasFilters = {}) {
   const [baseEmendas, vereadoresList, empenhos] = await Promise.all([
     getEmendas(),
     getVereadores(),

@@ -90,7 +90,7 @@ analises.
 
 ```text
 OPENAI_API_KEY=
-OPENAI_EMPENHO_MODEL=gpt-5.4-mini
+OPENAI_EMPENHO_MODEL=gpt-4o-mini
 OPENAI_EMPENHO_ENABLED=true
 ```
 

@@ -3,6 +3,8 @@ import { createHash } from "node:crypto";
 import path from "node:path";
 
 import type { ColetaLogEntry, ColetaStatus, EmpenhoRecord } from "@/lib/types";
+import type { Prisma } from "../../generated/prisma/client";
+import { isDatabaseConfigured, prisma } from "../../lib/prisma";
 
 export const EMPENHOS_SOURCE =
   "Portal Cidadao da Prefeitura Municipal de Itanhandu";
@@ -34,6 +36,16 @@ export type StoredEmpenhosArtifact = {
   registrosImportados: number;
   registros: EmpenhoRecord[];
   warnings: string[];
+  dbSync?: DbSyncResumo | null;
+};
+
+export type DbSyncResumo = {
+  ok: boolean;
+  novos: number;
+  atualizados: number;
+  totalAntes: number;
+  totalDepois: number;
+  erro?: string | null;
 };
 
 export async function ensureEmpenhosStorageDir() {
@@ -162,7 +174,97 @@ export async function saveEmpenhosArtifact(input: {
     },
   });
 
+  artifact.dbSync = await syncEmpenhosToDatabase(artifact.registros);
+
+  if (artifact.dbSync) {
+    await writeFile(metadataPath(hashArquivo), JSON.stringify(artifact, null, 2), "utf8");
+    await appendColetaLog({
+      timestamp: new Date().toISOString(),
+      status: artifact.dbSync.ok ? "SUCESSO" : "PARCIAL",
+      mensagem: artifact.dbSync.ok
+        ? `Banco atualizado: ${artifact.dbSync.novos} novo(s), ${artifact.dbSync.atualizados} atualizado(s). Total agora: ${artifact.dbSync.totalDepois}.`
+        : `Falha ao sincronizar com o banco: ${artifact.dbSync.erro ?? "erro desconhecido"}.`,
+      etapa: "db.sincronizar",
+      erro: artifact.dbSync.erro ?? null,
+      metadados: {
+        novos: artifact.dbSync.novos,
+        atualizados: artifact.dbSync.atualizados,
+        totalAntes: artifact.dbSync.totalAntes,
+        totalDepois: artifact.dbSync.totalDepois,
+      },
+    });
+  }
+
   return artifact;
+}
+
+export async function syncEmpenhosToDatabase(
+  registros: EmpenhoRecord[],
+): Promise<DbSyncResumo | null> {
+  if (!isDatabaseConfigured()) {
+    return null;
+  }
+
+  try {
+    const totalAntes = await prisma.empenho.count();
+    const idsAntes = new Set(
+      (await prisma.empenho.findMany({ select: { id: true } })).map((row) => row.id),
+    );
+    let novos = 0;
+    let atualizados = 0;
+
+    for (const registro of registros) {
+      const existed = idsAntes.has(registro.id);
+      await prisma.empenho.upsert({
+        where: { id: registro.id },
+        create: empenhoCreateData(registro),
+        update: empenhoUpdateData(registro),
+      });
+      if (existed) atualizados += 1;
+      else novos += 1;
+    }
+
+    const totalDepois = await prisma.empenho.count();
+    return { ok: true, novos, atualizados, totalAntes, totalDepois };
+  } catch (error) {
+    return {
+      ok: false,
+      novos: 0,
+      atualizados: 0,
+      totalAntes: 0,
+      totalDepois: 0,
+      erro: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+function empenhoCreateData(registro: EmpenhoRecord) {
+  return {
+    id: registro.id,
+    ano: registro.ano,
+    numeroEmpenho: registro.numeroEmpenho,
+    dataEmpenho: registro.dataEmpenho ? new Date(registro.dataEmpenho) : null,
+    fornecedor: registro.fornecedor,
+    cnpjCpfFornecedor: registro.cnpjCpfFornecedor ?? null,
+    historico: registro.historico,
+    secretaria: registro.secretaria,
+    dotacao: registro.dotacao,
+    ficha: registro.ficha,
+    processoCompra: registro.processoCompra,
+    valorEmpenhado: registro.valorEmpenhado,
+    valorLiquidado: registro.valorLiquidado,
+    valorPago: registro.valorPago,
+    situacao: registro.situacao,
+    fonte: registro.fonte,
+    hashArquivo: registro.hashArquivo ?? null,
+    linhaBruta: registro.linhaBruta
+      ? (JSON.parse(JSON.stringify(registro.linhaBruta)) as Prisma.InputJsonValue)
+      : undefined,
+  } satisfies Prisma.EmpenhoCreateInput;
+}
+
+function empenhoUpdateData(registro: EmpenhoRecord): Prisma.EmpenhoUpdateInput {
+  return empenhoCreateData(registro);
 }
 
 export async function appendColetaLog(entry: ColetaLogEntry) {

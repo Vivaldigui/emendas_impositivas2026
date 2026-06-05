@@ -29,15 +29,15 @@ export default async function HomePage() {
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-emerald-800">
             <Landmark className="h-4 w-4" aria-hidden />
-            Camara Municipal de Itanhandu
+            Câmara Municipal de Itanhandu
           </div>
           <div className="space-y-3">
             <h1 className="max-w-4xl text-3xl font-bold tracking-normal text-slate-950 sm:text-4xl">
               Dashboard de Emendas Impositivas 2026
             </h1>
             <p className="max-w-3xl text-base leading-7 text-slate-700">
-              Acompanhamento por vereador, area e situacao financeira, com cruzamento
-              dos empenhos oficiais extraidos do Portal Cidadao.
+              Acompanhamento por vereador, área e situação financeira, com cruzamento
+              dos empenhos oficiais extraídos do Portal Cidadão.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -46,7 +46,7 @@ export default async function HomePage() {
               <ExternalLink className="h-4 w-4" aria-hidden />
             </ButtonLink>
             <ButtonLink href="/api/admin/coletas/empenhos" variant="secondary">
-              Historico de coletas
+              Histórico de coletas
               <Database className="h-4 w-4" aria-hidden />
             </ButtonLink>
           </div>
@@ -59,20 +59,20 @@ export default async function HomePage() {
                 <CalendarClock className="h-5 w-5" aria-hidden />
               </span>
               <div>
-                <h2 className="font-bold text-slate-950">Coleta diaria</h2>
+                <h2 className="font-bold text-slate-950">Coleta diária</h2>
                 <p className="mt-1 text-sm leading-6 text-slate-600">
-                  Agendada para 07:00, consultando 01/01/2026 ate o dia da coleta.
+                  Agendada para 07:00, consultando 01/01/2026 até o dia da coleta.
                 </p>
               </div>
             </div>
             <div className="rounded-md bg-slate-50 p-3 text-sm text-slate-700">
               <p>
-                <strong>Ultima coleta:</strong>{" "}
-                {data.ultimaColeta ? formatDate(data.ultimaColeta.dataColeta) : "ainda nao executada"}
+                <strong>Última coleta:</strong>{" "}
+                {data.ultimaColeta ? formatDate(data.ultimaColeta.dataColeta) : "ainda não executada"}
               </p>
               <p>
                 <strong>Arquivo:</strong>{" "}
-                {data.ultimaColeta?.nomeArquivo ?? "nao localizado"}
+                {data.ultimaColeta?.nomeArquivo ?? "não localizado"}
               </p>
             </div>
           </CardContent>
@@ -102,7 +102,7 @@ export default async function HomePage() {
         />
         <SummaryCard
           icon={Database}
-          label="Execucao"
+          label="Execução"
           value={formatPercent(data.totals.percentualExecucao)}
         />
       </section>
@@ -144,8 +144,8 @@ export default async function HomePage() {
 
       <section className="space-y-3">
         <SectionHeader
-          title="Graficos"
-          description="Distribuicao por area, situacao e evolucao dos empenhos importados."
+          title="Gráficos"
+          description="Distribuição por área, situação e evolução dos empenhos importados."
         />
         <DashboardCharts
           evolucaoMensal={data.evolucaoMensal}
@@ -157,7 +157,7 @@ export default async function HomePage() {
       <section className="space-y-3">
         <SectionHeader
           title="Emendas"
-          description="Lista filtravel, compacta no celular, com detalhes em expansao."
+          description="Lista filtrável, compacta no celular, com detalhes em expansão."
         />
         <EmendasExplorer emendas={data.emendas} ia={data.ia} vereadores={data.vereadores} />
       </section>
@@ -184,10 +184,10 @@ export default async function HomePage() {
 
         <Card>
           <CardContent className="space-y-3 text-sm text-slate-700">
-            <h2 className="font-bold text-slate-950">Operacao</h2>
+            <h2 className="font-bold text-slate-950">Operação</h2>
             <p>
               Coleta manual via API: <code>POST /api/admin/coletas/empenhos</code>.
-              Em producao, envie <code>Authorization: Bearer COLETA_ADMIN_SECRET</code>.
+              Em produção, envie <code>Authorization: Bearer COLETA_ADMIN_SECRET</code>.
             </p>
             <p>
               CLI local:{" "}
@@ -197,8 +197,8 @@ export default async function HomePage() {
               </code>
             </p>
             <p>
-              Vinculos sugeridos aparecem como conferencia quando ha ambiguidade; o
-              sistema nao confirma automaticamente sugestoes da IA.
+              Vínculos sugeridos aparecem como conferência quando há ambiguidade; o
+              sistema não confirma automaticamente sugestões da IA.
             </p>
           </CardContent>
         </Card>

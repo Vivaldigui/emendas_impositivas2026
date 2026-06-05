@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { AlertCircle } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +10,8 @@ import { formatCurrency, formatPercent } from "@/lib/utils";
 
 export function VereadorCard({ vereador }: { vereador: VereadorResumo }) {
   return (
-    <Card className="overflow-hidden">
+    <Link href={`/vereadores/${vereador.id}`} className="block">
+    <Card className="overflow-hidden transition hover:border-emerald-300 hover:shadow-md">
       <CardContent className="space-y-4">
         <div className="flex items-center gap-3">
           <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md bg-slate-100">
@@ -31,7 +33,7 @@ export function VereadorCard({ vereador }: { vereador: VereadorResumo }) {
 
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-3 text-sm">
-            <span className="text-slate-500">Execucao</span>
+            <span className="text-slate-500">Execução</span>
             <strong className="text-slate-950">
               {formatPercent(vereador.percentualExecucao)}
             </strong>
@@ -64,5 +66,6 @@ export function VereadorCard({ vereador }: { vereador: VereadorResumo }) {
         )}
       </CardContent>
     </Card>
+    </Link>
   );
 }

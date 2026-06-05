@@ -8,3 +8,4 @@ coverage/
 screenshots-*.png
 storage/sonner/empenhos/*
 !storage/sonner/empenhos/.gitkeep
+tsconfig.tsbuildinfo

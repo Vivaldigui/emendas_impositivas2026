@@ -22,13 +22,13 @@ export function formatPercent(value: number) {
 
 export function formatDate(value: string | Date | null | undefined) {
   if (!value) {
-    return "nao localizado";
+    return "não localizado";
   }
 
   const date = value instanceof Date ? value : new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return "nao localizado";
+    return "não localizado";
   }
 
   return new Intl.DateTimeFormat("pt-BR", {

@@ -3,6 +3,7 @@
 import {
   BrainCircuit,
   CheckCircle2,
+  ExternalLink,
   Eye,
   Pencil,
   RotateCcw,
@@ -10,8 +11,11 @@ import {
   ShieldCheck,
   XCircle,
 } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
+import { Modal } from "@/components/ui/modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,6 +28,13 @@ type AiStatus = {
   model: string;
 };
 
+type ReviewModalState =
+  | { type: "CONFIRMAR"; vinculo: EmendaResumo["vinculos"][number] }
+  | { type: "REJEITAR"; vinculo: EmendaResumo["vinculos"][number] }
+  | { type: "DESFAZER_CONFIRMACAO"; vinculo: EmendaResumo["vinculos"][number] }
+  | { type: "ALTERAR_VALOR"; vinculo: EmendaResumo["vinculos"][number] }
+  | null;
+
 export function EmendasExplorer({
   emendas,
   vereadores,
@@ -33,6 +44,7 @@ export function EmendasExplorer({
   vereadores: VereadorResumo[];
   ia: AiStatus;
 }) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [vereadorId, setVereadorId] = useState("");
   const [area, setArea] = useState("");
@@ -41,6 +53,11 @@ export function EmendasExplorer({
   const [adminSecret, setAdminSecret] = useState("");
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [reviewModal, setReviewModal] = useState<ReviewModalState>(null);
+  const [reviewJustificativa, setReviewJustificativa] = useState("");
+  const [reviewValor, setReviewValor] = useState("");
+  const [reviewPermitirExcedente, setReviewPermitirExcedente] = useState(false);
+
   const areas = useMemo(
     () => Array.from(new Set(emendas.map((item) => item.area))).sort(),
     [emendas],
@@ -75,6 +92,29 @@ export function EmendasExplorer({
 
   const visibleRows = filtered.slice(0, visibleCount);
 
+  function openReviewModal(
+    vinculo: EmendaResumo["vinculos"][number],
+    type: NonNullable<ReviewModalState>["type"],
+  ) {
+    if (!vinculo.id) {
+      setMessage("Somente sugestões persistidas podem ser revisadas.");
+      return;
+    }
+    setReviewJustificativa("");
+    setReviewValor(
+      String(vinculo.valorAtribuido ?? vinculo.empenho?.valorEmpenhado ?? 0),
+    );
+    setReviewPermitirExcedente(false);
+    setReviewModal({ type, vinculo } as ReviewModalState);
+  }
+
+  function closeReviewModal() {
+    setReviewModal(null);
+    setReviewJustificativa("");
+    setReviewValor("");
+    setReviewPermitirExcedente(false);
+  }
+
   async function analyze(options: { emendaIds?: string[]; reanalisar?: boolean }) {
     setBusyAction(options.emendaIds?.[0] ?? "all");
     setMessage(null);
@@ -91,73 +131,50 @@ export function EmendasExplorer({
       const payload = await response.json();
 
       if (!response.ok) {
-        throw new Error(payload.error ?? "Falha ao executar analise.");
+        throw new Error(payload.error ?? "Falha ao executar análise.");
       }
 
       setMessage(
-        `Analise concluida: ${payload.resumo.analisadas} emenda(s), ${payload.resumo.sugeridas} sugestao(oes), ${payload.resumo.conferir} para conferir.`,
+        `Análise concluída: ${payload.resumo.analisadas} emenda(s), ${payload.resumo.sugeridas} sugestão(ões), ${payload.resumo.conferir} para conferir.`,
       );
-      window.location.reload();
+      router.refresh();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Falha ao executar analise.");
+      setMessage(error instanceof Error ? error.message : "Falha ao executar análise.");
     } finally {
       setBusyAction(null);
     }
   }
 
-  async function review(
-    vinculo: EmendaResumo["vinculos"][number],
-    acao: "CONFIRMAR" | "REJEITAR" | "ALTERAR_VALOR" | "DESFAZER_CONFIRMACAO",
-  ) {
-    if (!vinculo.id) {
-      setMessage("Somente sugestoes persistidas podem ser revisadas.");
-      return;
-    }
-
+  async function submitReview() {
+    if (!reviewModal) return;
+    const { type, vinculo } = reviewModal;
     const body: {
-      acao: typeof acao;
+      acao: typeof type;
       valorAtribuido?: number | null;
       justificativa?: string | null;
       permitirExcedente?: boolean;
-    } = { acao };
+    } = { acao: type };
 
-    if (acao === "CONFIRMAR") {
-      const ok = window.confirm(
-        "Esta correspondencia e uma sugestao automatizada e deve ser conferida com os documentos orcamentarios.",
-      );
-      if (!ok) {
+    if (type === "REJEITAR" || type === "DESFAZER_CONFIRMACAO") {
+      if (!reviewJustificativa.trim()) {
+        setMessage("Justificativa obrigatória para esta ação.");
         return;
       }
+      body.justificativa = reviewJustificativa.trim();
     }
 
-    if (acao === "REJEITAR" || acao === "DESFAZER_CONFIRMACAO") {
-      const justificativa = window.prompt("Informe a justificativa da revisao.");
-      if (!justificativa?.trim()) {
-        setMessage("Justificativa obrigatoria para esta acao.");
-        return;
-      }
-      body.justificativa = justificativa;
-    }
-
-    if (acao === "ALTERAR_VALOR") {
-      const current = vinculo.valorAtribuido ?? vinculo.empenho?.valorEmpenhado ?? 0;
-      const rawValue = window.prompt("Valor atribuido a esta emenda:", String(current));
-      if (rawValue === null) {
-        return;
-      }
-      const parsedValue = Number(rawValue.replace(/\./g, "").replace(",", "."));
+    if (type === "ALTERAR_VALOR") {
+      const parsedValue = Number(reviewValor.replace(/\./g, "").replace(",", "."));
       if (!Number.isFinite(parsedValue) || parsedValue < 0) {
-        setMessage("Valor atribuido invalido.");
+        setMessage("Valor atribuído inválido.");
         return;
       }
       body.valorAtribuido = parsedValue;
-      body.justificativa = window.prompt("Justificativa da alteracao de valor:") ?? null;
-      body.permitirExcedente = window.confirm(
-        "Permitir valor acima do saldo, se isto acontecer? Use apenas com justificativa documental.",
-      );
+      body.justificativa = reviewJustificativa.trim() || null;
+      body.permitirExcedente = reviewPermitirExcedente;
     }
 
-    setBusyAction(vinculo.id);
+    setBusyAction(vinculo.id ?? "review");
     setMessage(null);
 
     try {
@@ -172,13 +189,14 @@ export function EmendasExplorer({
       const payload = await response.json();
 
       if (!response.ok) {
-        throw new Error(payload.error ?? "Falha ao revisar vinculo.");
+        throw new Error(payload.error ?? "Falha ao revisar vínculo.");
       }
 
-      setMessage("Revisao registrada com auditoria.");
-      window.location.reload();
+      setMessage("Revisão registrada com auditoria.");
+      closeReviewModal();
+      router.refresh();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Falha ao revisar vinculo.");
+      setMessage(error instanceof Error ? error.message : "Falha ao revisar vínculo.");
     } finally {
       setBusyAction(null);
     }
@@ -201,7 +219,7 @@ export function EmendasExplorer({
                   setQuery(event.target.value);
                   setVisibleCount(18);
                 }}
-                placeholder="Buscar por descricao, secretaria, codigo ou justificativa"
+                placeholder="Buscar por descrição, secretaria, código ou justificativa"
                 value={query}
               />
             </label>
@@ -218,7 +236,7 @@ export function EmendasExplorer({
               value={vereadorId}
             />
             <SelectFilter
-              label="Area"
+              label="Área"
               onChange={(value) => {
                 setArea(value);
                 setVisibleCount(18);
@@ -227,7 +245,7 @@ export function EmendasExplorer({
               value={area}
             />
             <SelectFilter
-              label="Situacao"
+              label="Situação"
               onChange={(value) => {
                 setSituacao(value);
                 setVisibleCount(18);
@@ -263,9 +281,9 @@ export function EmendasExplorer({
         <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
           <span>Exibindo {visibleRows.length} de {filtered.length} emenda(s).</span>
           {ia.available ? (
-            <Badge variant="green">IA disponivel - {ia.model}</Badge>
+            <Badge variant="green">IA disponível • {ia.model}</Badge>
           ) : (
-            <Badge variant="amber">Analise de IA indisponivel</Badge>
+            <Badge variant="amber">Análise de IA indisponível</Badge>
           )}
           {!ia.enabled ? <Badge variant="neutral">IA desativada</Badge> : null}
           {message ? <span className="font-medium text-slate-800">{message}</span> : null}
@@ -289,7 +307,7 @@ export function EmendasExplorer({
                     ))}
                   </div>
                   <p className="mt-1 text-xs text-slate-500">
-                    {item.vereador.nome} - {item.area} - {item.secretaria}
+                    {item.vereador.nome} • {item.area} • {item.secretaria}
                   </p>
                 </div>
                 <div className="text-left sm:text-right">
@@ -310,6 +328,13 @@ export function EmendasExplorer({
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2">
+                <Link
+                  className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+                  href={`/emendas/${item.id}`}
+                >
+                  <ExternalLink className="h-4 w-4" aria-hidden />
+                  Abrir página pública
+                </Link>
                 <Button
                   disabled={busyAction !== null}
                   onClick={() => analyze({ emendaIds: [item.id], reanalisar: true })}
@@ -324,14 +349,14 @@ export function EmendasExplorer({
               {item.analiseIa ? (
                 <div className="mt-4 rounded-md border border-slate-200 bg-white p-3 text-sm text-slate-700">
                   <p className="font-semibold text-slate-950">
-                    Ultima analise: {analysisLabel(item.analiseIa.resultadoGeral)}
+                    Última análise: {analysisLabel(item.analiseIa.resultadoGeral)}
                   </p>
                   <p className="mt-1">
-                    {item.analiseIa.justificativa ?? "Justificativa nao registrada."}
+                    {item.analiseIa.justificativa ?? "Justificativa não registrada."}
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
-                    {item.analiseIa.modelo ?? "sem modelo"} -{" "}
-                    {formatDate(item.analiseIa.dataAnalise)} - candidatos:{" "}
+                    {item.analiseIa.modelo ?? "sem modelo"} •{" "}
+                    {formatDate(item.analiseIa.dataAnalise)} • candidatos:{" "}
                     {item.analiseIa.quantidadeCandidatos}
                   </p>
                 </div>
@@ -349,7 +374,7 @@ export function EmendasExplorer({
                           <div className="space-y-1">
                             <div className="flex flex-wrap items-center gap-2">
                               <p className="font-semibold text-slate-900">
-                                Empenho {vinculo.empenho.numeroEmpenho ?? "sem numero"}
+                                Empenho {vinculo.empenho.numeroEmpenho ?? "sem número"}
                               </p>
                               <Badge variant={vinculoBadgeVariant(vinculo)}>
                                 {vinculoBadgeLabel(vinculo)}
@@ -357,13 +382,13 @@ export function EmendasExplorer({
                             </div>
                             <p>
                               <strong>Favorecido:</strong>{" "}
-                              {vinculo.empenho.fornecedor ?? "nao localizado"}
+                              {vinculo.empenho.fornecedor ?? "não localizado"}
                             </p>
                             <p className="text-slate-600">
                               {vinculo.justificativaCurta ||
                                 vinculo.observacao ||
                                 vinculo.empenho.historico ||
-                                "Historico nao localizado"}
+                                "Histórico não localizado"}
                             </p>
                           </div>
 
@@ -373,7 +398,7 @@ export function EmendasExplorer({
                               value={formatCurrency(vinculo.empenho.valorEmpenhado)}
                             />
                             <MiniMetric
-                              label="Valor atribuido"
+                              label="Valor atribuído"
                               value={
                                 vinculo.valorAtribuido !== null &&
                                 vinculo.valorAtribuido !== undefined
@@ -385,7 +410,7 @@ export function EmendasExplorer({
                         </div>
 
                         <div className="mt-3 grid gap-2 text-xs text-slate-600 md:grid-cols-2 xl:grid-cols-4">
-                          <Info label="Acao/Dotacao" value={vinculo.empenho.dotacao ?? item.acao} />
+                          <Info label="Ação/Dotação" value={vinculo.empenho.dotacao ?? item.acao} />
                           <Info label="Secretaria" value={vinculo.empenho.secretaria ?? item.secretaria} />
                           <Info label="Natureza" value={vinculo.empenho.naturezaDespesa} />
                           <Info
@@ -406,11 +431,11 @@ export function EmendasExplorer({
                           <div className="mt-3 space-y-2">
                             <Info label="Fonte/Modalidade" value={vinculo.empenho.fonteRecurso ?? vinculo.empenho.modalidadeAplicacao} />
                             <Info label="Processo" value={vinculo.empenho.processoCompra} />
-                            <Info label="Historico" value={vinculo.empenho.historico} />
+                            <Info label="Histórico" value={vinculo.empenho.historico} />
                             <Info label="Modelo" value={vinculo.modelo} />
-                            <Info label="Data da analise" value={formatDate(vinculo.atualizadoEm)} />
-                            <List label="Criterios encontrados" values={vinculo.criterios} />
-                            <List label="Divergencias" values={vinculo.divergencias} />
+                            <Info label="Data da análise" value={formatDate(vinculo.atualizadoEm)} />
+                            <List label="Critérios encontrados" values={vinculo.criterios} />
+                            <List label="Divergências" values={vinculo.divergencias} />
                             <List label="Campos usados" values={vinculo.camposUsados} />
                           </div>
                         </details>
@@ -419,7 +444,7 @@ export function EmendasExplorer({
                           <div className="mt-3 flex flex-wrap gap-2">
                             <Button
                               disabled={busyAction !== null}
-                              onClick={() => review(vinculo, "CONFIRMAR")}
+                              onClick={() => openReviewModal(vinculo, "CONFIRMAR")}
                               type="button"
                               variant="secondary"
                             >
@@ -428,7 +453,7 @@ export function EmendasExplorer({
                             </Button>
                             <Button
                               disabled={busyAction !== null}
-                              onClick={() => review(vinculo, "REJEITAR")}
+                              onClick={() => openReviewModal(vinculo, "REJEITAR")}
                               type="button"
                               variant="secondary"
                             >
@@ -437,22 +462,22 @@ export function EmendasExplorer({
                             </Button>
                             <Button
                               disabled={busyAction !== null}
-                              onClick={() => review(vinculo, "ALTERAR_VALOR")}
+                              onClick={() => openReviewModal(vinculo, "ALTERAR_VALOR")}
                               type="button"
                               variant="secondary"
                             >
                               <Pencil className="h-4 w-4" aria-hidden />
-                              Editar valor atribuido
+                              Editar valor atribuído
                             </Button>
                             {vinculo.decisao === "CONFIRMADO" ? (
                               <Button
                                 disabled={busyAction !== null}
-                                onClick={() => review(vinculo, "DESFAZER_CONFIRMACAO")}
+                                onClick={() => openReviewModal(vinculo, "DESFAZER_CONFIRMACAO")}
                                 type="button"
                                 variant="secondary"
                               >
                                 <ShieldCheck className="h-4 w-4" aria-hidden />
-                                Desfazer confirmacao
+                                Desfazer confirmação
                               </Button>
                             ) : null}
                           </div>
@@ -463,7 +488,7 @@ export function EmendasExplorer({
                 ) : (
                   <p>
                     {item.analiseIa?.resultadoGeral === "SEM_VINCULO"
-                      ? "Sem vinculo localizado na ultima analise."
+                      ? "Sem vínculo localizado na última análise."
                       : "Nenhum empenho vinculado nos arquivos importados."}
                   </p>
                 )}
@@ -484,8 +509,101 @@ export function EmendasExplorer({
           </div>
         ) : null}
       </CardContent>
+
+      <Modal
+        open={reviewModal !== null}
+        onClose={closeReviewModal}
+        title={modalTitle(reviewModal?.type)}
+        description={modalDescription(reviewModal?.type)}
+        footer={
+          <>
+            <Button onClick={closeReviewModal} type="button" variant="subtle">
+              Cancelar
+            </Button>
+            <Button
+              disabled={busyAction !== null}
+              onClick={submitReview}
+              type="button"
+              variant="primary"
+            >
+              {modalConfirmLabel(reviewModal?.type)}
+            </Button>
+          </>
+        }
+      >
+        {reviewModal?.type === "ALTERAR_VALOR" ? (
+          <label className="block">
+            <span className="text-xs font-semibold uppercase text-slate-500">
+              Novo valor atribuído (R$)
+            </span>
+            <input
+              className="mt-1 h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-emerald-600"
+              onChange={(event) => setReviewValor(event.target.value)}
+              placeholder="0,00"
+              type="text"
+              value={reviewValor}
+            />
+          </label>
+        ) : null}
+
+        {reviewModal?.type === "ALTERAR_VALOR" ||
+        reviewModal?.type === "REJEITAR" ||
+        reviewModal?.type === "DESFAZER_CONFIRMACAO" ? (
+          <label className="block">
+            <span className="text-xs font-semibold uppercase text-slate-500">
+              Justificativa
+              {reviewModal?.type !== "ALTERAR_VALOR" ? " (obrigatória)" : " (opcional)"}
+            </span>
+            <textarea
+              className="mt-1 min-h-24 w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-emerald-600"
+              onChange={(event) => setReviewJustificativa(event.target.value)}
+              placeholder="Descreva o motivo da revisão para o histórico de auditoria."
+              value={reviewJustificativa}
+            />
+          </label>
+        ) : null}
+
+        {reviewModal?.type === "ALTERAR_VALOR" ? (
+          <label className="flex items-center gap-2 text-sm text-slate-700">
+            <input
+              checked={reviewPermitirExcedente}
+              onChange={(event) => setReviewPermitirExcedente(event.target.checked)}
+              type="checkbox"
+            />
+            Permitir valor acima do saldo (somente com justificativa documental).
+          </label>
+        ) : null}
+      </Modal>
     </Card>
   );
+}
+
+function modalTitle(type?: NonNullable<ReviewModalState>["type"]) {
+  if (type === "CONFIRMAR") return "Confirmar vínculo";
+  if (type === "REJEITAR") return "Rejeitar sugestão";
+  if (type === "ALTERAR_VALOR") return "Editar valor atribuído";
+  if (type === "DESFAZER_CONFIRMACAO") return "Desfazer confirmação";
+  return "";
+}
+
+function modalDescription(type?: NonNullable<ReviewModalState>["type"]) {
+  if (type === "CONFIRMAR")
+    return "Esta correspondência é uma sugestão automatizada e deve ser conferida com os documentos orçamentários.";
+  if (type === "REJEITAR")
+    return "A rejeição fica registrada com seu nome e a justificativa abaixo no histórico de auditoria.";
+  if (type === "ALTERAR_VALOR")
+    return "Use apenas valores documentalmente comprovados.";
+  if (type === "DESFAZER_CONFIRMACAO")
+    return "Reabrir um vínculo já confirmado também é registrado no histórico de auditoria.";
+  return "";
+}
+
+function modalConfirmLabel(type?: NonNullable<ReviewModalState>["type"]) {
+  if (type === "CONFIRMAR") return "Confirmar";
+  if (type === "REJEITAR") return "Rejeitar";
+  if (type === "ALTERAR_VALOR") return "Salvar valor";
+  if (type === "DESFAZER_CONFIRMACAO") return "Desfazer";
+  return "OK";
 }
 
 function SelectFilter({
@@ -539,7 +657,7 @@ function MiniMetric({ label, value }: { label: string; value: string }) {
 function Info({ label, value }: { label: string; value?: string | null }) {
   return (
     <p>
-      <strong>{label}:</strong> {value || "nao localizado"}
+      <strong>{label}:</strong> {value || "não localizado"}
     </p>
   );
 }
@@ -588,7 +706,7 @@ function statusBadges(item: EmendaResumo) {
   const origins = new Set(item.vinculos.map((vinculo) => vinculo.origem));
 
   if (origins.has("REGRA")) {
-    badges.push({ label: "Correspondencia por regra", variant: "blue" });
+    badges.push({ label: "Correspondência por regra", variant: "blue" });
   }
   if (origins.has("IA") && decisions.has("SUGERIDO")) {
     badges.push({ label: "IA sugeriu", variant: "blue" });
@@ -603,7 +721,7 @@ function statusBadges(item: EmendaResumo) {
     badges.push({ label: "Rejeitado", variant: "red" });
   }
   if (item.analiseIa?.resultadoGeral === "SEM_VINCULO") {
-    badges.push({ label: "Sem vinculo localizado", variant: "neutral" });
+    badges.push({ label: "Sem vínculo localizado", variant: "neutral" });
   }
 
   return badges;
@@ -622,7 +740,7 @@ function vinculoBadgeLabel(vinculo: EmendaResumo["vinculos"][number]) {
   if (vinculo.origem === "IA") {
     return "IA sugeriu";
   }
-  return "Correspondencia por regra";
+  return "Correspondência por regra";
 }
 
 function vinculoBadgeVariant(
@@ -642,13 +760,13 @@ function vinculoBadgeVariant(
 
 function analysisLabel(resultado: string) {
   if (resultado === "SUGERIR_VINCULOS") {
-    return "Sugeriu vinculos";
+    return "Sugeriu vínculos";
   }
   if (resultado === "CONFERIR") {
     return "Conferir manualmente";
   }
   if (resultado === "SEM_VINCULO") {
-    return "Sem vinculo localizado";
+    return "Sem vínculo localizado";
   }
-  return "Erro na analise";
+  return "Erro na análise";
 }

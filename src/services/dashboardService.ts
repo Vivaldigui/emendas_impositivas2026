@@ -1,4 +1,8 @@
-import { emendas, fontesDocumentos, vereadores } from "@/data/emendas";
+import {
+  getEmendas,
+  getFontesDocumentos,
+  getVereadores,
+} from "@/services/emendasRepository";
 import {
   getOpenAiEmpenhoModel,
   isOpenAiEmpenhoEnabled,
@@ -26,13 +30,15 @@ export type EmendasFilters = {
 };
 
 export async function getDashboardData() {
-  const [emendasResumo, artifacts, logs] = await Promise.all([
+  const [emendasResumo, vereadoresList, artifacts, logs, fontes] = await Promise.all([
     getEmendasResumo(),
+    getVereadores(),
     listStoredEmpenhosArtifacts(),
     readColetaLogs(20),
+    getFontesDocumentos(),
   ]);
-  const totals = summarizeEmendas(emendasResumo);
-  const vereadorResumo = summarizeVereadores(emendasResumo);
+  const totals = summarizeEmendas(emendasResumo, vereadoresList.length);
+  const vereadorResumo = summarizeVereadores(emendasResumo, vereadoresList);
   const porArea = groupByArea(emendasResumo);
   const porSituacao = groupBySituacao(emendasResumo);
   const evolucaoMensal = groupEmpenhosByMonth(emendasResumo.flatMap((item) => item.vinculos.map((vinculo) => vinculo.empenho)));
@@ -44,10 +50,10 @@ export async function getDashboardData() {
     porSituacao,
     evolucaoMensal,
     emendas: emendasResumo,
-    fontes: fontesDocumentos,
+    fontes,
     ultimaColeta: artifacts[0] ?? null,
     logs,
-    alertas: buildAlertas(emendasResumo, artifacts.length),
+    alertas: buildAlertas(emendasResumo, artifacts),
     ia: {
       enabled: process.env.OPENAI_EMPENHO_ENABLED !== "false",
       available: isOpenAiEmpenhoEnabled(),
@@ -57,16 +63,21 @@ export async function getDashboardData() {
 }
 
 export async function getVereadoresResumo() {
-  return summarizeVereadores(await getEmendasResumo());
+  const [resumo, vereadoresList] = await Promise.all([getEmendasResumo(), getVereadores()]);
+  return summarizeVereadores(resumo, vereadoresList);
 }
 
 export async function getEmendasResumo(filters: EmendasFilters = {}) {
-  const empenhos = await loadAllEmpenhos();
+  const [baseEmendas, vereadoresList, empenhos] = await Promise.all([
+    getEmendas(),
+    getVereadores(),
+    loadAllEmpenhos(),
+  ]);
   const persisted = await safeLoadPersistedState();
   const allEmpenhos = mergeEmpenhos(empenhos, persisted.empenhos);
-  const vinculos = gerarVinculosEmendasEmpenhos(allEmpenhos);
+  const vinculos = gerarVinculosEmendasEmpenhos(allEmpenhos, baseEmendas);
   const empenhosById = new Map(allEmpenhos.map((empenho) => [empenho.id, empenho]));
-  const vereadoresById = new Map(vereadores.map((vereador) => [vereador.id, vereador]));
+  const vereadoresById = new Map(vereadoresList.map((vereador) => [vereador.id, vereador]));
   const vinculosByEmenda = new Map<string, EmendaResumo["vinculos"]>();
 
   for (const vinculo of vinculos) {
@@ -91,7 +102,7 @@ export async function getEmendasResumo(filters: EmendasFilters = {}) {
     vinculosByEmenda.set(emendaId, Array.from(merged.values()));
   }
 
-  const resumo = emendas.map((emenda) => {
+  const resumo = baseEmendas.map((emenda) => {
     const vereador = vereadoresById.get(emenda.vereadorId);
     if (!vereador) {
       throw new Error(`Vereador nao localizado para emenda ${emenda.id}.`);
@@ -152,7 +163,7 @@ function applyFilters(rows: EmendaResumo[], filters: EmendasFilters) {
   });
 }
 
-function summarizeEmendas(rows: EmendaResumo[]) {
+function summarizeEmendas(rows: EmendaResumo[], totalVereadores: number) {
   const totalAutorizado = sum(rows, (item) => item.valorAutorizado);
   const totalEmpenhado = sum(rows, (item) => item.valorEmpenhado);
   const totalLiquidado = sum(rows, (item) => item.valorLiquidado);
@@ -169,12 +180,15 @@ function summarizeEmendas(rows: EmendaResumo[]) {
       ? clampPercent((totalEmpenhado / totalAutorizado) * 100)
       : 0,
     quantidadeEmendas: rows.length,
-    quantidadeVereadores: vereadores.length,
+    quantidadeVereadores: totalVereadores,
   };
 }
 
-function summarizeVereadores(rows: EmendaResumo[]): VereadorResumo[] {
-  return vereadores.map((vereador) => {
+function summarizeVereadores(
+  rows: EmendaResumo[],
+  vereadoresList: Awaited<ReturnType<typeof getVereadores>>,
+): VereadorResumo[] {
+  return vereadoresList.map((vereador) => {
     const items = rows.filter((item) => item.vereadorId === vereador.id);
     const totalAutorizado = sum(items, (item) => item.valorAutorizado);
     const totalEmpenhado = sum(items, (item) => item.valorEmpenhado);
@@ -296,25 +310,61 @@ function determineSituacao(
   return "Empenhada";
 }
 
-function buildAlertas(rows: EmendaResumo[], artifactsCount: number) {
-  const alertas = [];
+type Alerta = { titulo: string; descricao: string; nivel: "alto" | "medio" | "baixo" };
+
+function buildAlertas(
+  rows: EmendaResumo[],
+  artifacts: Awaited<ReturnType<typeof listStoredEmpenhosArtifacts>>,
+): Alerta[] {
+  const alertas: Alerta[] = [];
   const conferir = rows.filter((item) => item.situacao === "Conferir").length;
   const semEmpenho = rows.filter((item) => item.situacao === "Aguardando empenho").length;
+  const ultimoArtifact = artifacts[0] ?? null;
+  const horasDesdeUltimaColeta = ultimoArtifact
+    ? (Date.now() - new Date(ultimoArtifact.dataColeta).getTime()) / 36e5
+    : null;
 
-  if (!artifactsCount) {
+  if (!artifacts.length) {
     alertas.push({
-      titulo: "Coleta de empenhos ainda nao executada",
+      titulo: "Coleta de empenhos ainda não executada",
       descricao:
-        "O dashboard esta exibindo a base das emendas. Rode a coleta para cruzar com os empenhos oficiais.",
+        "O dashboard está exibindo a base das emendas. Rode a coleta para cruzar com os empenhos oficiais.",
+      nivel: "medio",
+    });
+  } else if (horasDesdeUltimaColeta !== null && horasDesdeUltimaColeta > 48) {
+    alertas.push({
+      titulo: `Última coleta há ${Math.round(horasDesdeUltimaColeta)}h`,
+      descricao:
+        "A coleta diária não roda há mais de 48 horas. Verifique o cron e o portal Cidadão.",
+      nivel: "alto",
+    });
+  }
+
+  if (ultimoArtifact && ultimoArtifact.registrosImportados === 0) {
+    alertas.push({
+      titulo: "Última coleta retornou zero registros",
+      descricao:
+        "Pode indicar quebra do parser por mudança no portal. Confira o artefato em storage/sonner/empenhos.",
+      nivel: "alto",
+    });
+  }
+
+  const atrasadas = identificarEmendasAtrasadas(rows);
+  if (atrasadas.length) {
+    alertas.push({
+      titulo: `${atrasadas.length} emenda(s) em atraso para o cronograma anual`,
+      descricao: `Considerando o exercício de ${new Date().getFullYear()}, era esperada execução de ao menos ${Math.round(
+        cronogramaEsperadoPercentual() * 100,
+      )}% até hoje. Confira a lista filtrando por "Aguardando empenho".`,
       nivel: "medio",
     });
   }
 
   if (conferir) {
     alertas.push({
-      titulo: `${conferir} emenda(s) precisam de conferencia`,
+      titulo: `${conferir} emenda(s) precisam de conferência`,
       descricao:
-        "Ha mais de um empenho possivelmente relacionado. O sistema evita marcar esse vinculo como certeza.",
+        "Há mais de um empenho possivelmente relacionado. O sistema evita marcar esse vínculo como certeza.",
       nivel: "alto",
     });
   }
@@ -323,12 +373,30 @@ function buildAlertas(rows: EmendaResumo[], artifactsCount: number) {
     alertas.push({
       titulo: `${semEmpenho} emenda(s) sem empenho vinculado`,
       descricao:
-        "Essas emendas ainda nao tiveram empenho localizado nos artefatos importados.",
+        "Essas emendas ainda não tiveram empenho localizado nos artefatos importados.",
       nivel: "baixo",
     });
   }
 
   return alertas;
+}
+
+function cronogramaEsperadoPercentual(now: Date = new Date()) {
+  const start = new Date(now.getFullYear(), 0, 1).getTime();
+  const end = new Date(now.getFullYear() + 1, 0, 1).getTime();
+  const elapsed = (now.getTime() - start) / (end - start);
+  return Math.max(0, Math.min(1, elapsed));
+}
+
+function identificarEmendasAtrasadas(rows: EmendaResumo[]) {
+  const esperado = cronogramaEsperadoPercentual();
+  if (esperado < 0.25) return [];
+  return rows.filter(
+    (item) =>
+      item.valorAutorizado > 0 &&
+      item.percentualExecucao / 100 < esperado - 0.2 &&
+      item.situacao !== "Paga",
+  );
 }
 
 function sum<T>(rows: T[], getter: (item: T) => number) {

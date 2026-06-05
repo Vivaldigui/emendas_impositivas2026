@@ -5,7 +5,7 @@ import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
 
 import type { Prisma } from "../../generated/prisma/client";
-import { emendas, vereadores } from "@/data/emendas";
+import { getEmendas, getVereadores } from "@/services/emendasRepository";
 import type {
   AnaliseIaResumo,
   DecisaoVinculo,
@@ -26,7 +26,7 @@ import { prisma } from "../../lib/prisma";
 export const AI_PROMPT_VERSION = "empenho-linker-v1";
 const MANDATORY_PROMPT_RULE =
   "Não invente vínculos financeiros. Analise somente os empenhos candidatos fornecidos. Quando houver qualquer dúvida relevante, retorne CONFERIR. Quando nenhum candidato apresentar evidências suficientes, retorne SEM_VINCULO. Nunca trate semelhança de valor, isoladamente, como prova de vínculo.";
-const DEFAULT_MODEL = "gpt-5.4-mini";
+const DEFAULT_MODEL = "gpt-4o-mini";
 const MAX_CANDIDATES = 5;
 const DEFAULT_CONCURRENCY = 2;
 const OPENAI_TIMEOUT_MS = 25_000;
@@ -117,7 +117,8 @@ export async function analisarVinculosEmendas(
   options: AnalyzeBatchOptions = {},
 ): Promise<AnalyzeBatchResult> {
   const iaDisponivel = isOpenAiEmpenhoEnabled();
-  const targetEmendas = emendas.filter((emenda) =>
+  const todasEmendas = await getEmendas();
+  const targetEmendas = todasEmendas.filter((emenda) =>
     options.emendaIds?.length ? options.emendaIds.includes(emenda.id) : true,
   );
   const empenhos = await loadEmpenhosForAnalysis();
@@ -153,7 +154,9 @@ export async function analisarUmaEmenda(
   options: AnalyzeBatchOptions = {},
 ): Promise<AnalyzeOneResult> {
   const candidatos = gerarCandidatosDeterministicos(emenda, empenhos, MAX_CANDIDATES);
-  const payload = buildAiPayload(emenda, candidatos);
+  const vereadores = await getVereadores();
+  const vereadorNome = vereadores.find((item) => item.id === emenda.vereadorId)?.nome;
+  const payload = buildAiPayload(emenda, candidatos, vereadorNome);
   const inputHash = hashPayload(payload);
   const model = getOpenAiEmpenhoModel();
   const iaDisponivel = isOpenAiEmpenhoEnabled();
@@ -548,15 +551,17 @@ function fallbackDeterministico(
   };
 }
 
-function buildAiPayload(emenda: Emenda, candidatos: DeterministicCandidate[]) {
-  const vereador = vereadores.find((item) => item.id === emenda.vereadorId);
-
+function buildAiPayload(
+  emenda: Emenda,
+  candidatos: DeterministicCandidate[],
+  vereadorNome?: string,
+) {
   return {
     promptVersion: AI_PROMPT_VERSION,
     regraObrigatoria: MANDATORY_PROMPT_RULE,
     emenda: {
       id: emenda.id,
-      vereador: vereador?.nome ?? emenda.vereadorId,
+      vereador: vereadorNome ?? emenda.vereadorId,
       descricao: emenda.descricao,
       valorAutorizado: emenda.valorAutorizado,
       area: emenda.area,

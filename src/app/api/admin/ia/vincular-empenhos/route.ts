@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { getAuthorizedAdmin } from "@/lib/adminAuth";
 import { analisarVinculosEmendas } from "@/services/aiEmpenhoLinker";
+import { invalidateDashboardCache } from "@/services/dashboardService";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,10 @@ export async function POST(request: NextRequest) {
     reanalisar: parsed.data.reanalisar,
     dryRun: parsed.data.dryRun,
   });
+
+  if (!parsed.data.dryRun) {
+    invalidateDashboardCache();
+  }
 
   return NextResponse.json({
     ...result,

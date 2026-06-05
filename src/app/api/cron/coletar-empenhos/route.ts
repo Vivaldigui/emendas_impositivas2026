@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { coletarEmpenhos } from "@/collectors/sonner/empenhosCollector";
 import { analisarVinculosEmendas } from "@/services/aiEmpenhoLinker";
+import { invalidateDashboardCache } from "@/services/dashboardService";
 import { appendColetaLog } from "@/services/empenhosStorage";
 import { todayInSaoPaulo } from "@/lib/utils";
 
@@ -46,6 +47,8 @@ export async function GET(request: NextRequest) {
       });
     }
   }
+
+  invalidateDashboardCache();
 
   const dbSync = coleta.artifact?.dbSync ?? null;
   return NextResponse.json(

@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { getAuthorizedAdmin } from "@/lib/adminAuth";
 import { revisarVinculo } from "@/services/aiEmpenhoLinker";
+import { invalidateDashboardCache } from "@/services/dashboardService";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,7 @@ export async function POST(
       revisadoPor: admin.id,
     });
 
+    invalidateDashboardCache();
     return NextResponse.json({ vinculo });
   } catch (error) {
     return NextResponse.json(

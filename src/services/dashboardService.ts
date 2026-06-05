@@ -29,7 +29,28 @@ export type EmendasFilters = {
   q?: string;
 };
 
+// Cache em memória do dashboard. O cálculo de vínculos é O(emendas × empenhos)
+// e fica caro com milhares de empenhos. TTL curto basta — a coleta diária
+// não dispara em segundos.
+const DASHBOARD_CACHE_TTL_MS = 60_000;
+let dashboardCache:
+  | { ts: number; data: Awaited<ReturnType<typeof computeDashboardData>> }
+  | null = null;
+
+export function invalidateDashboardCache() {
+  dashboardCache = null;
+}
+
 export async function getDashboardData() {
+  if (dashboardCache && Date.now() - dashboardCache.ts < DASHBOARD_CACHE_TTL_MS) {
+    return dashboardCache.data;
+  }
+  const data = await computeDashboardData();
+  dashboardCache = { ts: Date.now(), data };
+  return data;
+}
+
+async function computeDashboardData() {
   const [emendasResumo, vereadoresList, artifacts, logs, fontes] = await Promise.all([
     getEmendasResumo(),
     getVereadores(),
@@ -41,7 +62,11 @@ export async function getDashboardData() {
   const vereadorResumo = summarizeVereadores(emendasResumo, vereadoresList);
   const porArea = groupByArea(emendasResumo);
   const porSituacao = groupBySituacao(emendasResumo);
-  const evolucaoMensal = groupEmpenhosByMonth(emendasResumo.flatMap((item) => item.vinculos.map((vinculo) => vinculo.empenho)));
+  // Para o gráfico de evolução, considerar todos os vínculos não-rejeitados
+  // (já filtramos REJEITADO no compute principal).
+  const evolucaoMensal = groupVinculosByMonth(
+    emendasResumo.flatMap((item) => item.vinculos),
+  );
 
   return {
     totals,
@@ -102,6 +127,11 @@ export async function getEmendasResumo(filters: EmendasFilters = {}) {
     vinculosByEmenda.set(emendaId, Array.from(merged.values()));
   }
 
+  // Eleger uma única emenda por empenho entre as não-confirmadas, para evitar
+  // que o mesmo empenho seja somado em mais de uma emenda. Confirmados/Rejeitados
+  // preservam decisão humana e não entram na eleição.
+  const empenhoOwner = electEmpenhoOwners(vinculosByEmenda);
+
   const resumo = baseEmendas.map((emenda) => {
     const vereador = vereadoresById.get(emenda.vereadorId);
     if (!vereador) {
@@ -111,13 +141,32 @@ export async function getEmendasResumo(filters: EmendasFilters = {}) {
     const emendaVinculos = (vinculosByEmenda.get(emenda.id) ?? []).filter(
       (vinculo) => vinculo.decisao !== "REJEITADO",
     );
-    const valorEmpenhado = sum(emendaVinculos, (item) => attributedValue(item, "valorEmpenhado"));
-    const valorLiquidado = sum(emendaVinculos, (item) => attributedValue(item, "valorLiquidado"));
-    const valorPago = sum(emendaVinculos, (item) => attributedValue(item, "valorPago"));
+    const financialVinculos = emendaVinculos.filter((vinculo) =>
+      isFinanciallyCountableVinculo(vinculo, emenda.id, empenhoOwner),
+    );
+    const valorEmpenhadoBruto = sum(financialVinculos, (item) =>
+      attributedValue(item, "valorEmpenhado", emenda.valorAutorizado),
+    );
+    const valorLiquidadoBruto = sum(financialVinculos, (item) =>
+      attributedValue(item, "valorLiquidado", emenda.valorAutorizado),
+    );
+    const valorPagoBruto = sum(financialVinculos, (item) =>
+      attributedValue(item, "valorPago", emenda.valorAutorizado),
+    );
+    // Cap por valor autorizado da emenda: % executado nunca pode passar de 100%.
+    const valorEmpenhado = emenda.valorAutorizado
+      ? Math.min(emenda.valorAutorizado, valorEmpenhadoBruto)
+      : 0;
+    const valorLiquidado = emenda.valorAutorizado
+      ? Math.min(emenda.valorAutorizado, valorLiquidadoBruto)
+      : 0;
+    const valorPago = emenda.valorAutorizado
+      ? Math.min(emenda.valorAutorizado, valorPagoBruto)
+      : 0;
     const saldo = Math.max(0, emenda.valorAutorizado - valorEmpenhado);
     const percentualExecucao = emenda.valorAutorizado
       ? clampPercent((valorEmpenhado / emenda.valorAutorizado) * 100)
-      : 100;
+      : 0;
 
     return {
       ...emenda,
@@ -127,7 +176,13 @@ export async function getEmendasResumo(filters: EmendasFilters = {}) {
       valorPago,
       saldo,
       percentualExecucao,
-      situacao: determineSituacao(emenda.valorAutorizado, emendaVinculos),
+      situacao: determineSituacao(
+        emenda.valorAutorizado,
+        valorEmpenhado,
+        valorLiquidado,
+        valorPago,
+        emendaVinculos,
+      ),
       vinculos: emendaVinculos.sort(
         (left, right) => (right.confianca ?? 0) - (left.confianca ?? 0),
       ),
@@ -248,10 +303,11 @@ function groupBySituacao(rows: EmendaResumo[]) {
   return Array.from(map.values());
 }
 
-function groupEmpenhosByMonth(empenhos: EmpenhoRecord[]) {
+function groupVinculosByMonth(vinculos: EmendaResumo["vinculos"]) {
   const map = new Map<string, { mes: string; empenhado: number; liquidado: number; pago: number }>();
 
-  for (const empenho of empenhos) {
+  for (const vinculo of vinculos) {
+    const empenho = vinculo.empenho;
     const date = empenho.dataEmpenho ? new Date(empenho.dataEmpenho) : null;
     const key =
       date && !Number.isNaN(date.getTime())
@@ -263,33 +319,45 @@ function groupEmpenhosByMonth(empenhos: EmpenhoRecord[]) {
       liquidado: 0,
       pago: 0,
     };
+    // No gráfico de evolução, usamos o valor cheio do empenho (sem cap por emenda).
     current.empenhado += empenho.valorEmpenhado;
     current.liquidado += empenho.valorLiquidado;
     current.pago += empenho.valorPago;
     map.set(key, current);
   }
 
-  return Array.from(map.values()).sort((left, right) => left.mes.localeCompare(right.mes));
+  return Array.from(map.values())
+    .map((item) => ({
+      ...item,
+      empenhado: Number(item.empenhado.toFixed(2)),
+      liquidado: Number(item.liquidado.toFixed(2)),
+      pago: Number(item.pago.toFixed(2)),
+    }))
+    .sort((left, right) => left.mes.localeCompare(right.mes));
 }
 
 function determineSituacao(
   valorAutorizado: number,
+  valorEmpenhado: number,
+  valorLiquidado: number,
+  valorPago: number,
   vinculos: EmendaResumo["vinculos"],
 ): SituacaoEmenda {
-  if (
-    vinculos.some(
+  // Se tudo é só sugestão ou conferir, marca explicitamente "Conferir".
+  const temConfirmado = vinculos.some((vinculo) => vinculo.decisao === "CONFIRMADO");
+  const apenasSugestoes =
+    !temConfirmado &&
+    vinculos.length > 0 &&
+    vinculos.every(
       (vinculo) =>
         vinculo.criterio === "conferir" ||
         vinculo.decisao === "CONFERIR" ||
         vinculo.decisao === "SUGERIDO",
-    )
-  ) {
+    );
+
+  if (apenasSugestoes) {
     return "Conferir";
   }
-
-  const valorEmpenhado = sum(vinculos, (item) => attributedValue(item, "valorEmpenhado"));
-  const valorLiquidado = sum(vinculos, (item) => attributedValue(item, "valorLiquidado"));
-  const valorPago = sum(vinculos, (item) => attributedValue(item, "valorPago"));
 
   if (!valorEmpenhado) {
     return "Aguardando empenho";
@@ -439,18 +507,73 @@ function vinculoKey(vinculo: { emendaId: string; empenhoId: string }) {
   return `${vinculo.emendaId}:${vinculo.empenhoId}`;
 }
 
+function isFinanciallyCountableVinculo(
+  vinculo: EmendaResumo["vinculos"][number],
+  emendaId: string,
+  empenhoOwner: Map<string, string>,
+) {
+  if (vinculo.decisao === "REJEITADO") return false;
+  if (vinculo.decisao === "CONFIRMADO") return true;
+  // SUGERIDO ou CONFERIR: só conta se esta emenda for "dona" deste empenho na eleição.
+  return empenhoOwner.get(vinculo.empenhoId) === emendaId;
+}
+
+function electEmpenhoOwners(
+  vinculosByEmenda: Map<string, EmendaResumo["vinculos"]>,
+): Map<string, string> {
+  // confirmados têm prioridade absoluta; entre os demais, vence o maior score (confiança × determinístico).
+  const confirmedOwner = new Map<string, string>();
+  type Candidate = { emendaId: string; score: number };
+  const bestSuggested = new Map<string, Candidate>();
+
+  for (const [emendaId, vinculos] of vinculosByEmenda) {
+    for (const vinculo of vinculos) {
+      if (vinculo.decisao === "REJEITADO") continue;
+      if (vinculo.decisao === "CONFIRMADO") {
+        confirmedOwner.set(vinculo.empenhoId, emendaId);
+        continue;
+      }
+      const score =
+        ((vinculo.confianca ?? 0) || (vinculo.scoreDeterministico ?? 0)) +
+        (vinculo.scoreDeterministico ?? 0) * 0.5;
+      const current = bestSuggested.get(vinculo.empenhoId);
+      if (!current || score > current.score) {
+        bestSuggested.set(vinculo.empenhoId, { emendaId, score });
+      }
+    }
+  }
+
+  const owner = new Map<string, string>();
+  for (const [empenhoId, emendaId] of confirmedOwner) owner.set(empenhoId, emendaId);
+  for (const [empenhoId, candidate] of bestSuggested) {
+    if (!owner.has(empenhoId)) owner.set(empenhoId, candidate.emendaId);
+  }
+  return owner;
+}
+
 function attributedValue(
   vinculo: EmendaResumo["vinculos"][number],
   field: "valorEmpenhado" | "valorLiquidado" | "valorPago",
+  valorAutorizadoEmenda: number,
 ) {
-  if (!vinculo.valorAtribuido || vinculo.valorAtribuido >= vinculo.empenho.valorEmpenhado) {
-    return vinculo.empenho[field];
+  // Valor explícito (geralmente quando humano editou): ratear o field correspondente.
+  if (
+    vinculo.valorAtribuido !== null &&
+    vinculo.valorAtribuido !== undefined &&
+    vinculo.valorAtribuido < vinculo.empenho.valorEmpenhado
+  ) {
+    if (!vinculo.empenho.valorEmpenhado) {
+      return field === "valorEmpenhado" ? vinculo.valorAtribuido : 0;
+    }
+    const ratio = vinculo.valorAtribuido / vinculo.empenho.valorEmpenhado;
+    return Number((vinculo.empenho[field] * ratio).toFixed(2));
   }
 
-  if (!vinculo.empenho.valorEmpenhado) {
-    return field === "valorEmpenhado" ? vinculo.valorAtribuido : 0;
+  // Caso geral (CONFIRMADO sem cap explícito, ou SUGERIDO eleito):
+  // o vínculo contribui no máximo até o valor autorizado da emenda.
+  const valor = vinculo.empenho[field];
+  if (!valorAutorizadoEmenda || valor <= valorAutorizadoEmenda) {
+    return valor;
   }
-
-  const ratio = vinculo.valorAtribuido / vinculo.empenho.valorEmpenhado;
-  return Number((vinculo.empenho[field] * ratio).toFixed(2));
+  return valorAutorizadoEmenda;
 }

@@ -30,9 +30,9 @@ export type EmendasFilters = {
 };
 
 // Cache em memória do dashboard. O cálculo de vínculos é O(emendas × empenhos)
-// e fica caro com milhares de empenhos. TTL curto basta — a coleta diária
-// não dispara em segundos.
-const DASHBOARD_CACHE_TTL_MS = 60_000;
+// e fica caro. Como a coleta é diária, TTL de 5 min serve com folga;
+// invalidação explícita acontece no cron e em cada ação admin.
+const DASHBOARD_CACHE_TTL_MS = 5 * 60_000;
 let dashboardCache:
   | { ts: number; data: Awaited<ReturnType<typeof computeDashboardData>> }
   | null = null;
@@ -51,6 +51,7 @@ export async function getDashboardData() {
 }
 
 async function computeDashboardData() {
+  const computedAt = new Date().toISOString();
   const [emendasResumo, vereadoresList, artifacts, logs, fontes] = await Promise.all([
     getEmendasResumo(),
     getVereadores(),
@@ -85,6 +86,7 @@ async function computeDashboardData() {
       available: isOpenAiEmpenhoEnabled(),
       model: getOpenAiEmpenhoModel(),
     },
+    computedAt,
   };
 }
 

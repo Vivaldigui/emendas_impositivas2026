@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { ShareButton } from "@/components/dashboard/share-button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -46,13 +47,19 @@ export default async function VereadorPage(props: { params: Promise<{ id: string
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-      <Link
-        className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-800 hover:text-emerald-900"
-        href="/"
-      >
-        <ArrowLeft className="h-4 w-4" aria-hidden />
-        Voltar ao painel
-      </Link>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link
+          className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-800 hover:text-emerald-900"
+          href="/"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden />
+          Voltar ao painel
+        </Link>
+        <ShareButton
+          title={`Emendas de ${vereador.nome}`}
+          text={`${vereador.nome} executou ${formatPercent(vereador.percentualExecucao)} de R$ ${vereador.totalAutorizado.toFixed(2)} em emendas impositivas 2026.`}
+        />
+      </div>
 
       <header className="grid gap-4 sm:grid-cols-[120px_1fr] sm:items-center">
         <div className="relative h-28 w-28 overflow-hidden rounded-lg bg-slate-100">

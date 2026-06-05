@@ -2,6 +2,7 @@ import { ArrowLeft, Building2, ExternalLink, FileText, ScrollText } from "lucide
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { ShareButton } from "@/components/dashboard/share-button";
 import { TimelineExecucao } from "@/components/dashboard/timeline-execucao";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -43,13 +44,19 @@ export default async function EmendaPage(props: { params: Promise<{ id: string }
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-      <Link
-        className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-800 hover:text-emerald-900"
-        href="/"
-      >
-        <ArrowLeft className="h-4 w-4" aria-hidden />
-        Voltar ao painel
-      </Link>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link
+          className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-800 hover:text-emerald-900"
+          href="/"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden />
+          Voltar ao painel
+        </Link>
+        <ShareButton
+          title={`Emenda de ${emenda.vereador.nome}`}
+          text={`${emenda.descricao} — ${formatPercent(emenda.percentualExecucao)} executado`}
+        />
+      </div>
 
       <header className="space-y-3">
         <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">

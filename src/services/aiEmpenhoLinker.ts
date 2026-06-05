@@ -383,10 +383,6 @@ export async function revisarVinculo(input: ReviewInput) {
       ? normalizeValorAtribuido(input.valorAtribuido)
       : previousValue;
 
-  if (input.acao === "REJEITAR" && !input.justificativa?.trim()) {
-    throw new Error("Justificativa obrigatoria para rejeitar sugestao.");
-  }
-
   if (input.acao === "DESFAZER_CONFIRMACAO" && !input.justificativa?.trim()) {
     throw new Error("Justificativa obrigatoria para desfazer confirmacao.");
   }

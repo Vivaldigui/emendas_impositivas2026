@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-import { getAuthorizedAdmin } from "@/lib/adminAuth";
+import { getAdminAuthStatus, getAuthorizedAdmin } from "@/lib/adminAuth";
 import { analisarVinculosEmendas } from "@/services/aiEmpenhoLinker";
 import { invalidateDashboardCache } from "@/services/dashboardService";
 
@@ -17,7 +17,17 @@ export async function POST(request: NextRequest) {
   const admin = getAuthorizedAdmin(request);
 
   if (!admin) {
-    return NextResponse.json({ error: "Nao autorizado." }, { status: 401 });
+    const auth = getAdminAuthStatus(request);
+    return NextResponse.json(
+      {
+        error: "Nao autorizado.",
+        details: {
+          adminSecretConfigurado: auth.configured,
+          segredoEnviado: auth.provided,
+        },
+      },
+      { status: 401 },
+    );
   }
 
   const parsed = BodySchema.safeParse(await request.json().catch(() => ({})));

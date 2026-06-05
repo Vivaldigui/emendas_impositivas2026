@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getAuthorizedAdmin } from "@/lib/adminAuth";
+import { getAdminAuthStatus, getAuthorizedAdmin } from "@/lib/adminAuth";
 import { getHistoricoRevisoes } from "@/services/aiEmpenhoLinker";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +9,17 @@ export async function GET(request: NextRequest) {
   const admin = getAuthorizedAdmin(request);
 
   if (!admin) {
-    return NextResponse.json({ error: "Nao autorizado." }, { status: 401 });
+    const auth = getAdminAuthStatus(request);
+    return NextResponse.json(
+      {
+        error: "Nao autorizado.",
+        details: {
+          adminSecretConfigurado: auth.configured,
+          segredoEnviado: auth.provided,
+        },
+      },
+      { status: 401 },
+    );
   }
 
   const url = new URL(request.url);

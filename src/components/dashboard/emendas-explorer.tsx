@@ -136,7 +136,7 @@ export function EmendasExplorer({
       const payload = await response.json();
 
       if (!response.ok) {
-        throw new Error(formatApiError(payload.error ?? "Falha ao executar análise."));
+        throw new Error(formatApiError(payload.error ?? "Falha ao executar análise.", payload.details));
       }
 
       if (payload.ok === false) {
@@ -164,7 +164,11 @@ export function EmendasExplorer({
       permitirExcedente?: boolean;
     } = { acao: type };
 
-    if (type === "REJEITAR" || type === "DESFAZER_CONFIRMACAO") {
+    if (type === "REJEITAR") {
+      body.justificativa = reviewJustificativa.trim() || null;
+    }
+
+    if (type === "DESFAZER_CONFIRMACAO") {
       if (!reviewJustificativa.trim()) {
         setMessage("Justificativa obrigatória para esta ação.");
         return;
@@ -203,7 +207,7 @@ export function EmendasExplorer({
       const payload = await response.json();
 
       if (!response.ok) {
-        throw new Error(formatApiError(payload.error ?? "Falha ao revisar vínculo."));
+        throw new Error(formatApiError(payload.error ?? "Falha ao revisar vínculo.", payload.details));
       }
 
       setMessage("Revisão registrada com auditoria.");
@@ -567,7 +571,7 @@ export function EmendasExplorer({
           <label className="block">
             <span className="text-xs font-semibold uppercase text-slate-500">
               Justificativa
-              {reviewModal?.type !== "ALTERAR_VALOR" ? " (obrigatória)" : " (opcional)"}
+              {reviewModal?.type === "DESFAZER_CONFIRMACAO" ? " (obrigatória)" : " (opcional)"}
             </span>
             <textarea
               className="mt-1 min-h-24 w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-emerald-600"
@@ -605,7 +609,7 @@ function modalDescription(type?: NonNullable<ReviewModalState>["type"]) {
   if (type === "CONFIRMAR")
     return "Esta correspondência é uma sugestão automatizada e deve ser conferida com os documentos orçamentários.";
   if (type === "REJEITAR")
-    return "A rejeição fica registrada com seu nome e a justificativa abaixo no histórico de auditoria.";
+    return "A rejeição fica registrada com seu nome; a justificativa é opcional.";
   if (type === "ALTERAR_VALOR")
     return "Use apenas valores documentalmente comprovados.";
   if (type === "DESFAZER_CONFIRMACAO")
@@ -935,11 +939,24 @@ function formatOptionalCurrency(value: number | null) {
   return value === null ? "n/i" : formatCurrency(value);
 }
 
-function formatApiError(message: string) {
+type AuthErrorDetails = {
+  adminSecretConfigurado?: boolean;
+  segredoEnviado?: boolean;
+};
+
+function formatApiError(message: string, details?: AuthErrorDetails) {
   const normalized = message.toLowerCase();
 
   if (normalized.includes("nao autorizado") || normalized.includes("não autorizado")) {
-    return "Nao autorizado. Confira o segredo admin informado.";
+    if (details?.adminSecretConfigurado === false) {
+      return "Nao autorizado. O segredo admin ainda nao esta configurado no servidor.";
+    }
+
+    if (details?.segredoEnviado === false) {
+      return "Nao autorizado. Informe o segredo admin antes de executar esta acao.";
+    }
+
+    return "Nao autorizado. O segredo informado nao confere com o segredo configurado no servidor.";
   }
 
   if (

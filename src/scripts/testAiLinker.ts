@@ -229,7 +229,6 @@ async function testManualReviewAuditAndLimits() {
   const rejected = await revisarVinculo({
     vinculoId: rejeitar,
     acao: "REJEITAR",
-    justificativa: "Objeto divergente",
     revisadoPor: "teste",
   });
   assert.equal(rejected.decisao, "REJEITADO", "Rejeicao manual deve marcar REJEITADO.");

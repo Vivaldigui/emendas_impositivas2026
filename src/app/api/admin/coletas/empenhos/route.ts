@@ -5,7 +5,7 @@ import {
   listStoredEmpenhosArtifacts,
   readColetaLogs,
 } from "@/services/empenhosStorage";
-import { isAuthorizedAdmin } from "@/lib/adminAuth";
+import { getAdminAuthStatus, isAuthorizedAdmin } from "@/lib/adminAuth";
 import { todayInSaoPaulo } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -36,7 +36,18 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   if (!isAuthorizedAdmin(request)) {
-    return NextResponse.json({ ok: false, erro: "Nao autorizado." }, { status: 401 });
+    const auth = getAdminAuthStatus(request);
+    return NextResponse.json(
+      {
+        ok: false,
+        erro: "Nao autorizado.",
+        details: {
+          adminSecretConfigurado: auth.configured,
+          segredoEnviado: auth.provided,
+        },
+      },
+      { status: 401 },
+    );
   }
 
   const body = await request.json().catch(() => ({} as Record<string, unknown>));

@@ -19,8 +19,12 @@ env:
     secret: CRON_SECRET
     availability:
       - RUNTIME
+  - variable: OPENAI_API_KEY
+    secret: OPENAI_API_KEY
+    availability:
+      - RUNTIME
   - variable: OPENAI_EMPENHO_ENABLED
-    value: "false"
+    value: "true"
     availability:
       - BUILD
       - RUNTIME

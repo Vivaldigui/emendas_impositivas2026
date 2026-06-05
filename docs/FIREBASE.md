@@ -23,17 +23,32 @@ Os valores devem existir no Secret Manager/App Hosting:
 DATABASE_URL
 COLETA_ADMIN_SECRET
 CRON_SECRET
+OPENAI_API_KEY
 ```
 
-A IA fica desligada no deploy inicial:
+Para criar/atualizar o secret da OpenAI:
+
+```bash
+firebase apphosting:secrets:set OPENAI_API_KEY --project emendas-impositivas2026
+```
+
+Cole o valor quando solicitado. Em seguida, conceda permissao para o
+backend ler o secret:
+
+```bash
+firebase apphosting:secrets:grantaccess OPENAI_API_KEY \
+  --backend emendas-impositivas2026 --project emendas-impositivas2026
+```
+
+A IA fica ativada em producao pelo `apphosting.yaml`:
 
 ```text
-OPENAI_EMPENHO_ENABLED=false
-OPENAI_EMPENHO_MODEL=gpt-5.4-mini
+OPENAI_EMPENHO_ENABLED=true
+OPENAI_EMPENHO_MODEL=gpt-4o-mini
 ```
 
-Para ativar IA em producao, crie o secret `OPENAI_API_KEY`, inclua-o em
-`apphosting.yaml` e altere `OPENAI_EMPENHO_ENABLED` para `true`.
+Para desativar temporariamente, mude `OPENAI_EMPENHO_ENABLED` para
+`"false"` em `apphosting.yaml` e refaca o rollout.
 
 ## Publicar rollout
 

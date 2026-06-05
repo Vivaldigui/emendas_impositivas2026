@@ -1,0 +1,16 @@
+{
+  "apphosting": {
+    "backendId": "emendas-impositivas2026",
+    "rootDir": ".",
+    "alwaysDeployFromSource": true,
+    "ignore": [
+      ".git",
+      ".next",
+      "node_modules",
+      "storage",
+      "screenshots-*.png",
+      "firebase-debug.log",
+      "tsconfig.tsbuildinfo"
+    ]
+  }
+}

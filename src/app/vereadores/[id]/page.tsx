@@ -124,13 +124,13 @@ export default async function VereadorPage(props: { params: Promise<{ id: string
                 </div>
               </div>
               <div className="mt-3 flex items-center justify-between gap-2">
-                <Badge variant={situacaoVariant(emenda.situacao)}>
+                <Badge variant={situacaoVariant(situacaoPublica(emenda.situacao))}>
                   {emenda.situacao === "Paga" ? (
                     <CheckCircle2 className="mr-1 h-3.5 w-3.5" aria-hidden />
                   ) : emenda.situacao === "Aguardando empenho" ? (
                     <AlertCircle className="mr-1 h-3.5 w-3.5" aria-hidden />
                   ) : null}
-                  {emenda.situacao}
+                  {situacaoPublica(emenda.situacao)}
                 </Badge>
                 <Progress className="ml-2 flex-1" value={emenda.percentualExecucao} />
               </div>
@@ -151,9 +151,15 @@ function Metric({ label, value }: { label: string; value: string }) {
   );
 }
 
+function situacaoPublica(situacao: string): string {
+  if (situacao === "Paga") return "Paga";
+  if (situacao === "Liquidada") return "Liquidada";
+  if (situacao === "Aguardando empenho") return "Aguardando empenho";
+  return "Em execução";
+}
+
 function situacaoVariant(situacao: string) {
   if (situacao === "Paga" || situacao === "Liquidada") return "green";
-  if (situacao === "Conferir") return "red";
   if (situacao === "Aguardando empenho") return "amber";
   return "blue";
 }

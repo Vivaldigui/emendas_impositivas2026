@@ -68,7 +68,9 @@ export default async function EmendaPage(props: { params: Promise<{ id: string }
           {emenda.descricao}
         </h1>
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant={situacaoVariant(emenda.situacao)}>{emenda.situacao}</Badge>
+          <Badge variant={situacaoVariant(situacaoPublica(emenda.situacao))}>
+            {situacaoPublica(emenda.situacao)}
+          </Badge>
           {emenda.codigo ? <Badge variant="neutral">Código {emenda.codigo}</Badge> : null}
           {emenda.acao ? <Badge variant="neutral">Ação {emenda.acao}</Badge> : null}
         </div>
@@ -225,9 +227,15 @@ function Info({ label, value }: { label: string; value: string }) {
   );
 }
 
+function situacaoPublica(situacao: string): string {
+  if (situacao === "Paga") return "Paga";
+  if (situacao === "Liquidada") return "Liquidada";
+  if (situacao === "Aguardando empenho") return "Aguardando empenho";
+  return "Em execução";
+}
+
 function situacaoVariant(situacao: string) {
   if (situacao === "Paga" || situacao === "Liquidada") return "green";
-  if (situacao === "Conferir") return "red";
   if (situacao === "Aguardando empenho") return "amber";
   return "blue";
 }

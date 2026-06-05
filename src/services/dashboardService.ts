@@ -78,7 +78,8 @@ async function computeDashboardData() {
     fontes,
     ultimaColeta: artifacts[0] ?? null,
     logs,
-    alertas: buildAlertas(emendasResumo, artifacts),
+    alertasPublicos: buildAlertasPublicos(emendasResumo),
+    alertasAdmin: buildAlertasAdmin(emendasResumo, artifacts),
     ia: {
       enabled: process.env.OPENAI_EMPENHO_ENABLED !== "false",
       available: isOpenAiEmpenhoEnabled(),
@@ -380,7 +381,22 @@ function determineSituacao(
 
 type Alerta = { titulo: string; descricao: string; nivel: "alto" | "medio" | "baixo" };
 
-function buildAlertas(
+function buildAlertasPublicos(rows: EmendaResumo[]): Alerta[] {
+  const alertas: Alerta[] = [];
+  const atrasadas = identificarEmendasAtrasadas(rows);
+  if (atrasadas.length) {
+    alertas.push({
+      titulo: `${atrasadas.length} emenda(s) em atraso no cronograma de ${new Date().getFullYear()}`,
+      descricao: `Era esperada execução de ao menos ${Math.round(
+        cronogramaEsperadoPercentual() * 100,
+      )}% até hoje. Veja a lista filtrando por "Aguardando empenho".`,
+      nivel: "medio",
+    });
+  }
+  return alertas;
+}
+
+function buildAlertasAdmin(
   rows: EmendaResumo[],
   artifacts: Awaited<ReturnType<typeof listStoredEmpenhosArtifacts>>,
 ): Alerta[] {
@@ -414,17 +430,6 @@ function buildAlertas(
       descricao:
         "Pode indicar quebra do parser por mudança no portal. Confira o artefato em storage/sonner/empenhos.",
       nivel: "alto",
-    });
-  }
-
-  const atrasadas = identificarEmendasAtrasadas(rows);
-  if (atrasadas.length) {
-    alertas.push({
-      titulo: `${atrasadas.length} emenda(s) em atraso para o cronograma anual`,
-      descricao: `Considerando o exercício de ${new Date().getFullYear()}, era esperada execução de ao menos ${Math.round(
-        cronogramaEsperadoPercentual() * 100,
-      )}% até hoje. Confira a lista filtrando por "Aguardando empenho".`,
-      nivel: "medio",
     });
   }
 

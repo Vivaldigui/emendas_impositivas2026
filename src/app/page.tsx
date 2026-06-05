@@ -1,6 +1,5 @@
 import {
   AlertTriangle,
-  CalendarClock,
   Database,
   ExternalLink,
   FileDown,
@@ -10,13 +9,13 @@ import {
 } from "lucide-react";
 
 import { DashboardCharts } from "@/components/charts/dashboard-charts";
-import { EmendasExplorer } from "@/components/dashboard/emendas-explorer";
+import { EmendasPublicList } from "@/components/dashboard/emendas-public-list";
 import { VereadorCard } from "@/components/dashboard/vereador-card";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getDashboardData } from "@/services/dashboardService";
-import { formatCurrency, formatDate, formatPercent } from "@/lib/utils";
+import { formatCurrency, formatPercent } from "@/lib/utils";
 
 // Cache de 60s no Next; o cron e ações admin invalidam via
 // invalidateDashboardCache, então dados nunca ficam mais que 1min defasados.
@@ -44,39 +43,24 @@ export default async function HomePage() {
           </div>
           <div className="flex flex-wrap gap-2">
             <ButtonLink href="/api/dashboard" variant="secondary">
-              API dashboard
+              API pública
               <ExternalLink className="h-4 w-4" aria-hidden />
-            </ButtonLink>
-            <ButtonLink href="/api/admin/coletas/empenhos" variant="secondary">
-              Histórico de coletas
-              <Database className="h-4 w-4" aria-hidden />
             </ButtonLink>
           </div>
         </div>
 
         <Card>
-          <CardContent className="space-y-3">
-            <div className="flex items-start gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-emerald-50 text-emerald-800">
-                <CalendarClock className="h-5 w-5" aria-hidden />
-              </span>
-              <div>
-                <h2 className="font-bold text-slate-950">Coleta diária</h2>
-                <p className="mt-1 text-sm leading-6 text-slate-600">
-                  Agendada para 07:00, consultando 01/01/2026 até o dia da coleta.
-                </p>
-              </div>
-            </div>
-            <div className="rounded-md bg-slate-50 p-3 text-sm text-slate-700">
-              <p>
-                <strong>Última coleta:</strong>{" "}
-                {data.ultimaColeta ? formatDate(data.ultimaColeta.dataColeta) : "ainda não executada"}
-              </p>
-              <p>
-                <strong>Arquivo:</strong>{" "}
-                {data.ultimaColeta?.nomeArquivo ?? "não localizado"}
-              </p>
-            </div>
+          <CardContent className="space-y-3 text-sm leading-6 text-slate-700">
+            <h2 className="font-bold text-slate-950">Como ler este painel</h2>
+            <p>
+              Cada emenda passa por quatro etapas: <strong>Autorizado</strong> (valor
+              previsto), <strong>Empenhado</strong> (reservado a um fornecedor),{" "}
+              <strong>Liquidado</strong> (bem ou serviço entregue) e <strong>Pago</strong>{" "}
+              (dinheiro pago ao beneficiário).
+            </p>
+            <p className="text-xs text-slate-500">
+              Dados atualizados diariamente a partir do Portal Cidadão.
+            </p>
           </CardContent>
         </Card>
       </section>
@@ -109,9 +93,9 @@ export default async function HomePage() {
         />
       </section>
 
-      {data.alertas.length ? (
+      {data.alertasPublicos.length ? (
         <section className="grid gap-3 lg:grid-cols-3">
-          {data.alertas.map((alerta) => (
+          {data.alertasPublicos.map((alerta) => (
             <Card key={alerta.titulo}>
               <CardContent className="flex gap-3">
                 <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-amber-50 text-amber-700">
@@ -159,15 +143,15 @@ export default async function HomePage() {
       <section className="space-y-3">
         <SectionHeader
           title="Emendas"
-          description="Lista filtrável, compacta no celular, com detalhes em expansão."
+          description="Toque em uma emenda para ver o detalhamento e os empenhos vinculados."
         />
-        <EmendasExplorer emendas={data.emendas} ia={data.ia} vereadores={data.vereadores} />
+        <EmendasPublicList emendas={data.emendas} vereadores={data.vereadores} />
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-[1fr_1fr]">
+      <section>
         <Card>
           <CardContent>
-            <h2 className="font-bold text-slate-950">Fontes oficiais preservadas</h2>
+            <h2 className="font-bold text-slate-950">Fontes oficiais</h2>
             <div className="mt-3 space-y-2 text-sm">
               {data.fontes.map((fonte) => (
                 <a
@@ -181,27 +165,6 @@ export default async function HomePage() {
                 </a>
               ))}
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="space-y-3 text-sm text-slate-700">
-            <h2 className="font-bold text-slate-950">Operação</h2>
-            <p>
-              Coleta manual via API: <code>POST /api/admin/coletas/empenhos</code>.
-              Em produção, envie <code>Authorization: Bearer COLETA_ADMIN_SECRET</code>.
-            </p>
-            <p>
-              CLI local:{" "}
-              <code>
-                npm run collect:empenhos -- --inicio=2026-01-01 --fim=hoje --formato=excel
-                --modo=auto
-              </code>
-            </p>
-            <p>
-              Vínculos sugeridos aparecem como conferência quando há ambiguidade; o
-              sistema não confirma automaticamente sugestões da IA.
-            </p>
           </CardContent>
         </Card>
       </section>

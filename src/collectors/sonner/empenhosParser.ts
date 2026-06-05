@@ -139,21 +139,192 @@ function matrixToRows(matrix: Array<Array<unknown>>) {
 
   const headers = matrix[0].map((cell, index) => cleanHeader(cell) || `coluna_${index}`);
   const rows: Record<string, unknown>[] = [];
+  let currentEmpenho: Record<string, unknown> | null = null;
+  let detailSection: "subEmpenhos" | "documentosPagamento" | null = null;
 
   for (const row of matrix.slice(1)) {
     if (!row.some(Boolean)) {
       continue;
     }
 
-    rows.push(
-      headers.reduce<Record<string, unknown>>((record, header, index) => {
-        record[header] = row[index] ?? null;
-        return record;
-      }, {}),
-    );
+    const record = rowToRecord(headers, row);
+
+    if (isMainEmpenhoRow(record)) {
+      rows.push(record);
+      currentEmpenho = record;
+      detailSection = null;
+      continue;
+    }
+
+    if (!currentEmpenho) {
+      continue;
+    }
+
+    const cells = row.map((cell) => cleanTextValue(cell));
+    const lineText = cells.filter(Boolean).join(" ");
+
+    if (!lineText) {
+      continue;
+    }
+
+    if (normalizeText(lineText) === "sub empenhos") {
+      ensureDetalhes(currentEmpenho).subEmpenhos ??= [];
+      detailSection = "subEmpenhos";
+      continue;
+    }
+
+    if (normalizeText(lineText) === "documentos de pagamentos") {
+      ensureDetalhes(currentEmpenho).documentosPagamento ??= [];
+      detailSection = "documentosPagamento";
+      continue;
+    }
+
+    if (lineText.toLowerCase().startsWith("processo compra:")) {
+      currentEmpenho["Processo Compra"] = lineText;
+      ensureDetalhes(currentEmpenho).processoCompraDetalhado = lineText;
+      detailSection = null;
+      continue;
+    }
+
+    if (detailSection === "subEmpenhos") {
+      const subEmpenho = parseSubEmpenhoDetail(cells);
+      if (subEmpenho) {
+        ensureDetalhes(currentEmpenho).subEmpenhos ??= [];
+        ensureDetalhes(currentEmpenho).subEmpenhos?.push(subEmpenho);
+      }
+      continue;
+    }
+
+    if (detailSection === "documentosPagamento") {
+      const documento = parseDocumentoPagamentoDetail(cells);
+      if (documento) {
+        ensureDetalhes(currentEmpenho).documentosPagamento ??= [];
+        ensureDetalhes(currentEmpenho).documentosPagamento?.push(documento);
+      }
+      continue;
+    }
+
+    const historico = cells[4] ?? lineText;
+    if (isHistoricoDetailLine(historico)) {
+      currentEmpenho["Histórico"] = appendText(currentEmpenho["Histórico"], historico);
+      ensureDetalhes(currentEmpenho).historicoLinhas ??= [];
+      ensureDetalhes(currentEmpenho).historicoLinhas?.push(historico);
+    }
   }
 
   return rows;
+}
+
+function rowToRecord(headers: string[], row: Array<unknown>) {
+  return headers.reduce<Record<string, unknown>>((record, header, index) => {
+    record[header] = row[index] ?? null;
+    return record;
+  }, {});
+}
+
+function isMainEmpenhoRow(row: Record<string, unknown>) {
+  const field = createFieldReader(row);
+  const numeroEmpenho = cleanTextValue(field(["empenho", "numero do empenho"]));
+  const credor = cleanTextValue(field(["credor", "fornecedor"]));
+  const data = parseDateString(field(["data empenho", "data"]));
+  const valorEmpenhado = currencyField(field, ["empenhado", "valor empenhado"]);
+
+  return Boolean(numeroEmpenho && data && credor && valorEmpenhado);
+}
+
+type EmpenhoDetalhesBrutos = {
+  historicoLinhas?: string[];
+  processoCompraDetalhado?: string;
+  subEmpenhos?: Array<{
+    liquidacao: string | null;
+    contexto: string | null;
+    data: string | null;
+    gestor: string | null;
+    historico: string | null;
+    valor: number | null;
+  }>;
+  documentosPagamento?: Array<{
+    tipo: string | null;
+    numero: string | null;
+    dataEmissao: string | null;
+    dataVencimento: string | null;
+    descricao: string | null;
+    valor: number | null;
+  }>;
+};
+
+function ensureDetalhes(row: Record<string, unknown>) {
+  const detalhes =
+    typeof row.Detalhes === "object" && row.Detalhes !== null
+      ? (row.Detalhes as EmpenhoDetalhesBrutos)
+      : {};
+  row.Detalhes = detalhes;
+  return detalhes;
+}
+
+function parseSubEmpenhoDetail(cells: Array<string | null>) {
+  const liquidacao = cells[1];
+  const contexto = cells[2];
+  const data = cells[10];
+  const gestor = cells[14];
+  const historico = cells[20];
+  const valor = parseBrazilianCurrency(cells[34]);
+
+  if (!liquidacao || normalizeText(liquidacao) === "liq") {
+    return null;
+  }
+
+  if (!historico && !valor) {
+    return null;
+  }
+
+  return { liquidacao, contexto, data, gestor, historico, valor };
+}
+
+function parseDocumentoPagamentoDetail(cells: Array<string | null>) {
+  const tipo = cells[1];
+  const numero = cells[5];
+  const dataEmissao = cells[9];
+  const dataVencimento = cells[13];
+  const descricao = cells[16];
+  const valor = parseBrazilianCurrency(cells[32]);
+
+  if (!tipo || normalizeText(tipo) === "tipo") {
+    return null;
+  }
+
+  if (!numero && !valor) {
+    return null;
+  }
+
+  return { tipo, numero, dataEmissao, dataVencimento, descricao, valor };
+}
+
+function isHistoricoDetailLine(value: string | null) {
+  if (!value) {
+    return false;
+  }
+
+  const normalized = normalizeText(value);
+  return (
+    normalized.length > 12 &&
+    !normalized.startsWith("processo compra") &&
+    normalized !== "sub empenhos" &&
+    normalized !== "documentos de pagamentos"
+  );
+}
+
+function appendText(current: unknown, next: string) {
+  const previous = cleanTextValue(current);
+  if (!previous) {
+    return next;
+  }
+
+  if (previous.includes(next)) {
+    return previous;
+  }
+
+  return `${previous} ${next}`;
 }
 
 function findHeaderIndex(matrix: Array<Array<unknown>>) {
@@ -247,7 +418,7 @@ function createFieldReader(row: Record<string, unknown>) {
     }
 
     const fuzzy = entries.find(([key]) =>
-      normalizedNames.some((name) => key.includes(name) || name.includes(key)),
+      normalizedNames.some((name) => key.includes(name)),
     );
 
     return fuzzy?.[1] ?? null;

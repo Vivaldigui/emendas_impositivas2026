@@ -448,6 +448,7 @@ export function EmendasExplorer({
                             <Info label="Histórico" value={vinculo.empenho.historico} />
                             <Info label="Modelo" value={vinculo.modelo} />
                             <Info label="Data da análise" value={formatDate(vinculo.atualizadoEm)} />
+                            <EmpenhoExtraDetails linhaBruta={vinculo.empenho.linhaBruta} />
                             <List label="Critérios encontrados" values={vinculo.criterios} />
                             <List label="Divergências" values={vinculo.divergencias} />
                             <List label="Campos usados" values={vinculo.camposUsados} />
@@ -698,6 +699,83 @@ function List({ label, values }: { label: string; values?: string[] }) {
   );
 }
 
+function EmpenhoExtraDetails({
+  linhaBruta,
+}: {
+  linhaBruta?: Record<string, unknown>;
+}) {
+  const detalhes = getEmpenhoDetails(linhaBruta);
+
+  if (
+    !detalhes?.processoCompraDetalhado &&
+    !detalhes?.subEmpenhos.length &&
+    !detalhes?.documentosPagamento.length
+  ) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-3 rounded-md border border-slate-200 bg-white p-3">
+      <p className="font-semibold text-slate-800">Dados complementares do empenho</p>
+
+      {detalhes.processoCompraDetalhado ? (
+        <Info label="Processo detalhado" value={detalhes.processoCompraDetalhado} />
+      ) : null}
+
+      {detalhes.subEmpenhos.length ? (
+        <div>
+          <p className="font-semibold text-slate-800">Sub-empenhos/liquidações</p>
+          <div className="mt-2 space-y-2">
+            {detalhes.subEmpenhos.map((subEmpenho, index) => (
+              <div
+                className="rounded-md bg-slate-50 p-2 text-xs leading-5 text-slate-700"
+                key={`${subEmpenho.liquidacao ?? index}-${subEmpenho.valor ?? "sem-valor"}`}
+              >
+                <p>
+                  <strong>Liq.:</strong> {subEmpenho.liquidacao ?? "n/i"}{" "}
+                  <strong>Data:</strong> {subEmpenho.data ?? "n/i"}{" "}
+                  <strong>Valor:</strong> {formatOptionalCurrency(subEmpenho.valor)}
+                </p>
+                {subEmpenho.gestor ? (
+                  <p>
+                    <strong>Gestor:</strong> {subEmpenho.gestor}
+                  </p>
+                ) : null}
+                {subEmpenho.historico ? <p>{subEmpenho.historico}</p> : null}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {detalhes.documentosPagamento.length ? (
+        <div>
+          <p className="font-semibold text-slate-800">Documentos de pagamento</p>
+          <div className="mt-2 space-y-2">
+            {detalhes.documentosPagamento.map((documento, index) => (
+              <div
+                className="rounded-md bg-slate-50 p-2 text-xs leading-5 text-slate-700"
+                key={`${documento.tipo ?? index}-${documento.numero ?? "sem-numero"}`}
+              >
+                <p>
+                  <strong>{documento.tipo ?? "Documento"}</strong>{" "}
+                  {documento.numero ? `nº ${documento.numero}` : null}{" "}
+                  <strong>Valor:</strong> {formatOptionalCurrency(documento.valor)}
+                </p>
+                <p>
+                  <strong>Emissão:</strong> {documento.dataEmissao ?? "n/i"}{" "}
+                  <strong>Vencimento:</strong> {documento.dataVencimento ?? "n/i"}
+                </p>
+                {documento.descricao ? <p>{documento.descricao}</p> : null}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function badgeVariant(situacao: string) {
   if (situacao === "Paga" || situacao === "Liquidada") {
     return "green";
@@ -783,6 +861,78 @@ function analysisLabel(resultado: string) {
     return "Sem vínculo localizado";
   }
   return "Erro na análise";
+}
+
+type EmpenhoExtraDetailsData = {
+  processoCompraDetalhado: string | null;
+  subEmpenhos: Array<{
+    liquidacao: string | null;
+    contexto: string | null;
+    data: string | null;
+    gestor: string | null;
+    historico: string | null;
+    valor: number | null;
+  }>;
+  documentosPagamento: Array<{
+    tipo: string | null;
+    numero: string | null;
+    dataEmissao: string | null;
+    dataVencimento: string | null;
+    descricao: string | null;
+    valor: number | null;
+  }>;
+};
+
+function getEmpenhoDetails(
+  linhaBruta?: Record<string, unknown>,
+): EmpenhoExtraDetailsData | null {
+  const raw = linhaBruta?.Detalhes ?? linhaBruta?.detalhes;
+
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+
+  const details = raw as Record<string, unknown>;
+
+  return {
+    processoCompraDetalhado: readString(details.processoCompraDetalhado),
+    subEmpenhos: readArray(details.subEmpenhos).map((item) => ({
+      liquidacao: readString(item.liquidacao),
+      contexto: readString(item.contexto),
+      data: readString(item.data),
+      gestor: readString(item.gestor),
+      historico: readString(item.historico),
+      valor: readNumber(item.valor),
+    })),
+    documentosPagamento: readArray(details.documentosPagamento).map((item) => ({
+      tipo: readString(item.tipo),
+      numero: readString(item.numero),
+      dataEmissao: readString(item.dataEmissao),
+      dataVencimento: readString(item.dataVencimento),
+      descricao: readString(item.descricao),
+      valor: readNumber(item.valor),
+    })),
+  };
+}
+
+function readArray(value: unknown) {
+  return Array.isArray(value)
+    ? value.filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object"))
+    : [];
+}
+
+function readString(value: unknown) {
+  const text = String(value ?? "").trim();
+  return text || null;
+}
+
+function readNumber(value: unknown) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function formatOptionalCurrency(value: number | null) {
+  return value === null ? "n/i" : formatCurrency(value);
 }
 
 function formatApiError(message: string) {

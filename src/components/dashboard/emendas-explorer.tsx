@@ -45,6 +45,9 @@ export function EmendasExplorer({
   ia: AiStatus;
 }) {
   const router = useRouter();
+  const [reviewedVinculos, setReviewedVinculos] = useState<
+    Record<string, EmendaResumo["vinculos"][number] | null>
+  >({});
   const [query, setQuery] = useState("");
   const [vereadorId, setVereadorId] = useState("");
   const [area, setArea] = useState("");
@@ -58,18 +61,41 @@ export function EmendasExplorer({
   const [reviewValor, setReviewValor] = useState("");
   const [reviewPermitirExcedente, setReviewPermitirExcedente] = useState(false);
 
+  const displayEmendas = useMemo(
+    () =>
+      emendas.map((emenda) => ({
+        ...emenda,
+        vinculos: emenda.vinculos
+          .map((vinculo) => {
+            const localReview = vinculo.id ? reviewedVinculos[vinculo.id] : undefined;
+
+            if (localReview === null) {
+              return null;
+            }
+
+            if (localReview) {
+              return { ...vinculo, ...localReview, empenho: localReview.empenho ?? vinculo.empenho };
+            }
+
+            return vinculo;
+          })
+          .filter((vinculo): vinculo is EmendaResumo["vinculos"][number] => Boolean(vinculo)),
+      })),
+    [emendas, reviewedVinculos],
+  );
+
   const areas = useMemo(
-    () => Array.from(new Set(emendas.map((item) => item.area))).sort(),
-    [emendas],
+    () => Array.from(new Set(displayEmendas.map((item) => item.area))).sort(),
+    [displayEmendas],
   );
   const situacoes = useMemo(
-    () => Array.from(new Set(emendas.map((item) => item.situacao))).sort(),
-    [emendas],
+    () => Array.from(new Set(displayEmendas.map((item) => item.situacao))).sort(),
+    [displayEmendas],
   );
   const filtered = useMemo(() => {
     const normalizedQuery = normalizeText(query);
 
-    return emendas.filter((item) => {
+    return displayEmendas.filter((item) => {
       const haystack = normalizeText(
         [
           item.descricao,
@@ -88,7 +114,7 @@ export function EmendasExplorer({
         (!situacao || item.situacao === situacao)
       );
     });
-  }, [area, emendas, query, situacao, vereadorId]);
+  }, [area, displayEmendas, query, situacao, vereadorId]);
 
   const visibleRows = filtered.slice(0, visibleCount);
 
@@ -113,6 +139,18 @@ export function EmendasExplorer({
     setReviewJustificativa("");
     setReviewValor("");
     setReviewPermitirExcedente(false);
+  }
+
+  function applyReviewedVinculo(
+    action: NonNullable<ReviewModalState>["type"],
+    reviewed: EmendaResumo["vinculos"][number] | null | undefined,
+  ) {
+    if (!reviewed?.id) return;
+
+    setReviewedVinculos((current) => ({
+      ...current,
+      [reviewed.id as string]: action === "REJEITAR" ? null : reviewed,
+    }));
   }
 
   async function analyze(options: { emendaIds?: string[]; reanalisar?: boolean }) {
@@ -210,7 +248,12 @@ export function EmendasExplorer({
         throw new Error(formatApiError(payload.error ?? "Falha ao revisar vínculo.", payload.details));
       }
 
-      setMessage("Revisão registrada com auditoria.");
+      applyReviewedVinculo(type, payload.vinculo);
+      setMessage(
+        type === "REJEITAR"
+          ? "Sugestão rejeitada e removida da lista."
+          : "Revisão registrada com auditoria.",
+      );
       closeReviewModal();
       router.refresh();
     } catch (error) {
@@ -545,7 +588,7 @@ export function EmendasExplorer({
               type="button"
               variant="primary"
             >
-              {modalConfirmLabel(reviewModal?.type)}
+              {busyAction !== null ? "Salvando..." : modalConfirmLabel(reviewModal?.type)}
             </Button>
           </>
         }

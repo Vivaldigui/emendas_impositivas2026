@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { getEmendasResumo, getVereadoresResumo } from "@/services/dashboardService";
 import { formatCurrency, formatPercent } from "@/lib/utils";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export async function generateMetadata(props: {
   params: Promise<{ id: string }>;

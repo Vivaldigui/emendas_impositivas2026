@@ -18,7 +18,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getDashboardData } from "@/services/dashboardService";
 import { formatCurrency, formatDate, formatPercent } from "@/lib/utils";
 
-export const dynamic = "force-dynamic";
+// Cache de 60s no Next; o cron e ações admin invalidam via
+// invalidateDashboardCache, então dados nunca ficam mais que 1min defasados.
+export const revalidate = 60;
 
 export default async function HomePage() {
   const data = await getDashboardData();

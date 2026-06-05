@@ -1,5 +1,7 @@
 runConfig:
-  minInstances: 0
+  # Manter ao menos 1 instância sempre quente. Sem isso, cada visita
+  # paga 30-60s de cold start (boot do container + conexão Prisma+TLS).
+  minInstances: 1
   maxInstances: 2
   concurrency: 80
   cpu: 1

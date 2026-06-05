@@ -148,12 +148,45 @@ export async function analisarVinculosEmendas(
   };
 }
 
+export async function encontrarEmendasAfetadasPorEmpenhos(empenhoIds: string[]) {
+  const uniqueIds = Array.from(new Set(empenhoIds.filter(Boolean)));
+  if (!uniqueIds.length) {
+    return [];
+  }
+
+  const [todasEmendas, empenhos] = await Promise.all([
+    getEmendas(),
+    loadEmpenhosForAnalysis(),
+  ]);
+  const empenhoIdSet = new Set(uniqueIds);
+  const empenhosAlterados = empenhos.filter((empenho) => empenhoIdSet.has(empenho.id));
+  const emendaIds: string[] = [];
+
+  for (const emenda of todasEmendas) {
+    const rejectedEmpenhoIds = await loadRejectedEmpenhoIds(emenda.id);
+    const candidatos = gerarCandidatosDeterministicos(
+      emenda,
+      empenhosAlterados,
+      1,
+    ).filter((candidate) => !rejectedEmpenhoIds.has(candidate.empenhoId));
+
+    if (candidatos.length) {
+      emendaIds.push(emenda.id);
+    }
+  }
+
+  return emendaIds;
+}
+
 export async function analisarUmaEmenda(
   emenda: Emenda,
   empenhos: EmpenhoRecord[],
   options: AnalyzeBatchOptions = {},
 ): Promise<AnalyzeOneResult> {
-  const candidatos = gerarCandidatosDeterministicos(emenda, empenhos, MAX_CANDIDATES);
+  const rejectedEmpenhoIds = await loadRejectedEmpenhoIds(emenda.id);
+  const candidatos = gerarCandidatosDeterministicos(emenda, empenhos, MAX_CANDIDATES).filter(
+    (candidate) => !rejectedEmpenhoIds.has(candidate.empenhoId),
+  );
   const vereadores = await getVereadores();
   const vereadorNome = vereadores.find((item) => item.id === emenda.vereadorId)?.nome;
   const payload = buildAiPayload(emenda, candidatos, vereadorNome);
@@ -309,11 +342,25 @@ export async function analisarUmaEmenda(
   }
 }
 
+async function loadRejectedEmpenhoIds(emendaId: string) {
+  const rejected = await prisma.emendaEmpenhoVinculo.findMany({
+    where: {
+      emendaId,
+      decisao: "REJEITADO",
+    },
+    select: {
+      empenhoId: true,
+    },
+  });
+
+  return new Set(rejected.map((vinculo) => vinculo.empenhoId));
+}
+
 export function validateAiResult(
   result: AiEmpenhoLinkResult,
   emenda: Emenda,
   candidatos: DeterministicCandidate[],
-) {
+): AiEmpenhoLinkResult {
   const parsed = AiEmpenhoLinkResultSchema.parse(result);
 
   if (parsed.emendaId !== emenda.id) {
@@ -332,7 +379,39 @@ export function validateAiResult(
     throw new Error("IA retornou SEM_VINCULO com lista de vinculos.");
   }
 
-  return parsed;
+  const candidateById = new Map(candidatos.map((candidate) => [candidate.empenhoId, candidate]));
+  const vinculosComEvidencia = parsed.vinculos.filter((vinculo) => {
+    const candidate = candidateById.get(vinculo.empenhoId);
+    return candidate ? hasConcreteEvidence(candidate) : false;
+  });
+
+  if (!vinculosComEvidencia.length) {
+    return {
+      ...parsed,
+      decisaoGeral: "SEM_VINCULO" as const,
+      vinculos: [],
+      confiancaGeral: Math.min(parsed.confiancaGeral, 0.25),
+      justificativaGeral:
+        "Nenhum candidato apresentou evidencia concreta suficiente depois da validacao conservadora.",
+      alertas: mergeStrings(parsed.alertas, [
+        "Candidatos descartados por evidencias fracas ou genericas.",
+      ]),
+    };
+  }
+
+  const podeSugerir = vinculosComEvidencia.some((vinculo) => {
+    const candidate = candidateById.get(vinculo.empenhoId);
+    return candidate ? isStrongSuggestion(candidate, vinculo.confianca) : false;
+  });
+
+  return {
+    ...parsed,
+    decisaoGeral:
+      parsed.decisaoGeral === "SUGERIR_VINCULOS" && podeSugerir
+        ? "SUGERIR_VINCULOS"
+        : ("CONFERIR" as const),
+    vinculos: vinculosComEvidencia,
+  };
 }
 
 export async function loadPersistedLinkState() {
@@ -501,6 +580,9 @@ function buildSystemPrompt() {
     "Voce analisa possiveis vinculos entre emendas impositivas e empenhos publicos.",
     MANDATORY_PROMPT_RULE,
     "Voce nunca confirma definitivamente um vinculo. Mesmo com confianca alta, retorne apenas sugestoes para revisao humana.",
+    "A lei das emendas e recente: nao presuma que uma emenda ja foi executada apenas porque existe empenho antigo, valor parecido, secretaria igual, unidade generica ou a palavra Fundacao/Prefeitura/Itanhandu.",
+    "Sem evidencia concreta no objeto, historico, entidade beneficiaria, favorecido/CNPJ, acao ou dotacao especifica, retorne SEM_VINCULO. Valor semelhante, sozinho ou com secretaria generica, e insuficiente.",
+    "Quando o empenho parecer apenas administrativamente parecido, use CONFERIR e explique a duvida; nao use SUGERIR_VINCULOS.",
     "Considere execucao direta, obra, compra, servico, material de consumo, equipamento permanente, transferencia, subvencao social, contribuicao, termo de fomento, termo de colaboracao, convenio, repasse, custeio de entidade, Fundacao e Fundo Municipal.",
     "Avalie compatibilidade de objeto, entidade/favorecido, CNPJ/CPF quando fornecido, acao, dotacao, secretaria, natureza da despesa, modalidade, fonte, valores parciais e empenhos globais.",
     "Retorne sempre o schema estruturado solicitado.",
@@ -522,12 +604,25 @@ function fallbackDeterministico(
     };
   }
 
-  const top = candidatos.slice(0, 3);
-  const highConfidence = top[0]?.scoreDeterministico >= 0.72 && !top[0].divergencias.length;
+  const top = candidatos
+    .filter((candidate) => hasConcreteEvidence(candidate) && candidate.scoreDeterministico >= 0.55)
+    .slice(0, 2);
+
+  if (!top.length) {
+    return {
+      emendaId,
+      decisaoGeral: "SEM_VINCULO",
+      confiancaGeral: 0,
+      vinculos: [],
+      justificativaGeral:
+        "Analise por IA indisponivel e as regras nao encontraram evidencia concreta suficiente.",
+      alertas: ["Analise de IA indisponivel."],
+    };
+  }
 
   return {
     emendaId,
-    decisaoGeral: highConfidence ? "SUGERIR_VINCULOS" : "CONFERIR",
+    decisaoGeral: "CONFERIR",
     confiancaGeral: top[0]?.scoreDeterministico ?? 0,
     vinculos: top.map((candidate) => ({
       empenhoId: candidate.empenhoId,
@@ -915,6 +1010,32 @@ function statusFromAi(result: AiEmpenhoLinkResult): AnalyzeOneResult["status"] {
   }
 
   return result.decisaoGeral === "CONFERIR" ? "CONFERIR" : "SUGERIDO";
+}
+
+function hasConcreteEvidence(candidate: DeterministicCandidate) {
+  const criterios = candidate.criteriosEncontrados;
+  const hasObjectOrEntity = criterios.some(
+    (criterio) =>
+      criterio.startsWith("acao_") ||
+      criterio === "dotacao_correspondente" ||
+      criterio.startsWith("entidade_ou_codigo") ||
+      criterio === "favorecido_compativel" ||
+      criterio === "entidade_no_historico",
+  );
+  const hasSpecificObject =
+    criterios.includes("historico_ou_objeto_compativel") &&
+    candidate.scoreDeterministico >= 0.42;
+
+  return hasObjectOrEntity || hasSpecificObject;
+}
+
+function isStrongSuggestion(candidate: DeterministicCandidate, aiConfidence: number) {
+  return (
+    hasConcreteEvidence(candidate) &&
+    candidate.divergencias.length === 0 &&
+    candidate.scoreDeterministico >= 0.62 &&
+    aiConfidence >= 0.72
+  );
 }
 
 function toUiVinculo(

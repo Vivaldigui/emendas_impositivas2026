@@ -43,8 +43,11 @@ export type DbSyncResumo = {
   ok: boolean;
   novos: number;
   atualizados: number;
+  inalterados: number;
   totalAntes: number;
   totalDepois: number;
+  novosIds?: string[];
+  atualizadosIds?: string[];
   erro?: string | null;
 };
 
@@ -182,13 +185,14 @@ export async function saveEmpenhosArtifact(input: {
       timestamp: new Date().toISOString(),
       status: artifact.dbSync.ok ? "SUCESSO" : "PARCIAL",
       mensagem: artifact.dbSync.ok
-        ? `Banco atualizado: ${artifact.dbSync.novos} novo(s), ${artifact.dbSync.atualizados} atualizado(s). Total agora: ${artifact.dbSync.totalDepois}.`
+        ? `Banco atualizado: ${artifact.dbSync.novos} novo(s), ${artifact.dbSync.atualizados} alterado(s), ${artifact.dbSync.inalterados} inalterado(s). Total agora: ${artifact.dbSync.totalDepois}.`
         : `Falha ao sincronizar com o banco: ${artifact.dbSync.erro ?? "erro desconhecido"}.`,
       etapa: "db.sincronizar",
       erro: artifact.dbSync.erro ?? null,
       metadados: {
         novos: artifact.dbSync.novos,
         atualizados: artifact.dbSync.atualizados,
+        inalterados: artifact.dbSync.inalterados,
         totalAntes: artifact.dbSync.totalAntes,
         totalDepois: artifact.dbSync.totalDepois,
       },
@@ -207,30 +211,78 @@ export async function syncEmpenhosToDatabase(
 
   try {
     const totalAntes = await prisma.empenho.count();
-    const idsAntes = new Set(
-      (await prisma.empenho.findMany({ select: { id: true } })).map((row) => row.id),
+    const existingRows = await prisma.empenho.findMany({
+      where: { id: { in: registros.map((registro) => registro.id) } },
+      select: {
+        id: true,
+        ano: true,
+        numeroEmpenho: true,
+        dataEmpenho: true,
+        fornecedor: true,
+        cnpjCpfFornecedor: true,
+        historico: true,
+        secretaria: true,
+        dotacao: true,
+        ficha: true,
+        processoCompra: true,
+        valorEmpenhado: true,
+        valorLiquidado: true,
+        valorPago: true,
+        situacao: true,
+        fonte: true,
+        hashArquivo: true,
+        linhaBruta: true,
+      },
+    });
+    const existingById = new Map(
+      existingRows.map((row) => [row.id, row]),
     );
     let novos = 0;
     let atualizados = 0;
+    let inalterados = 0;
+    const novosIds: string[] = [];
+    const atualizadosIds: string[] = [];
 
     for (const registro of registros) {
-      const existed = idsAntes.has(registro.id);
-      await prisma.empenho.upsert({
+      const existing = existingById.get(registro.id);
+
+      if (!existing) {
+        await prisma.empenho.create({ data: empenhoCreateData(registro) });
+        novos += 1;
+        novosIds.push(registro.id);
+        continue;
+      }
+
+      if (!empenhoChanged(existing, registro)) {
+        inalterados += 1;
+        continue;
+      }
+
+      await prisma.empenho.update({
         where: { id: registro.id },
-        create: empenhoCreateData(registro),
-        update: empenhoUpdateData(registro),
+        data: empenhoUpdateData(registro),
       });
-      if (existed) atualizados += 1;
-      else novos += 1;
+      atualizados += 1;
+      atualizadosIds.push(registro.id);
     }
 
     const totalDepois = await prisma.empenho.count();
-    return { ok: true, novos, atualizados, totalAntes, totalDepois };
+    return {
+      ok: true,
+      novos,
+      atualizados,
+      inalterados,
+      totalAntes,
+      totalDepois,
+      novosIds,
+      atualizadosIds,
+    };
   } catch (error) {
     return {
       ok: false,
       novos: 0,
       atualizados: 0,
+      inalterados: 0,
       totalAntes: 0,
       totalDepois: 0,
       erro: error instanceof Error ? error.message : String(error),
@@ -265,6 +317,67 @@ function empenhoCreateData(registro: EmpenhoRecord) {
 
 function empenhoUpdateData(registro: EmpenhoRecord): Prisma.EmpenhoUpdateInput {
   return empenhoCreateData(registro);
+}
+
+function empenhoChanged(
+  existing: {
+    ano: number;
+    numeroEmpenho: string | null;
+    dataEmpenho: Date | null;
+    fornecedor: string | null;
+    cnpjCpfFornecedor: string | null;
+    historico: string | null;
+    secretaria: string | null;
+    dotacao: string | null;
+    ficha: string | null;
+    processoCompra: string | null;
+    valorEmpenhado: unknown;
+    valorLiquidado: unknown;
+    valorPago: unknown;
+    situacao: string | null;
+    fonte: string;
+    hashArquivo: string | null;
+    linhaBruta: unknown;
+  },
+  registro: EmpenhoRecord,
+) {
+  return (
+    existing.ano !== registro.ano ||
+    textKey(existing.numeroEmpenho) !== textKey(registro.numeroEmpenho) ||
+    dateKey(existing.dataEmpenho) !== dateKey(registro.dataEmpenho) ||
+    textKey(existing.fornecedor) !== textKey(registro.fornecedor) ||
+    textKey(existing.cnpjCpfFornecedor) !== textKey(registro.cnpjCpfFornecedor) ||
+    textKey(existing.historico) !== textKey(registro.historico) ||
+    textKey(existing.secretaria) !== textKey(registro.secretaria) ||
+    textKey(existing.dotacao) !== textKey(registro.dotacao) ||
+    textKey(existing.ficha) !== textKey(registro.ficha) ||
+    textKey(existing.processoCompra) !== textKey(registro.processoCompra) ||
+    moneyKey(existing.valorEmpenhado) !== moneyKey(registro.valorEmpenhado) ||
+    moneyKey(existing.valorLiquidado) !== moneyKey(registro.valorLiquidado) ||
+    moneyKey(existing.valorPago) !== moneyKey(registro.valorPago) ||
+    textKey(existing.situacao) !== textKey(registro.situacao) ||
+    textKey(existing.fonte) !== textKey(registro.fonte) ||
+    jsonKey(existing.linhaBruta) !== jsonKey(registro.linhaBruta ?? null)
+  );
+}
+
+function textKey(value: unknown) {
+  return String(value ?? "").trim();
+}
+
+function moneyKey(value: unknown) {
+  const numberValue = Number(value ?? 0);
+  return Number.isFinite(numberValue) ? numberValue.toFixed(2) : "0.00";
+}
+
+function dateKey(value: unknown) {
+  if (!value) return "";
+  const date = value instanceof Date ? value : new Date(String(value));
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString();
+}
+
+function jsonKey(value: unknown) {
+  return JSON.stringify(value ?? null);
 }
 
 export async function appendColetaLog(entry: ColetaLogEntry) {

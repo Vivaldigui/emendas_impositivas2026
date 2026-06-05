@@ -62,10 +62,13 @@ async function computeDashboardData() {
   const vereadorResumo = summarizeVereadores(emendasResumo, vereadoresList);
   const porArea = groupByArea(emendasResumo);
   const porSituacao = groupBySituacao(emendasResumo);
-  // Para o gráfico de evolução, considerar todos os vínculos não-rejeitados
-  // (já filtramos REJEITADO no compute principal).
+  // Para execução financeira, só contam vínculos confirmados manualmente.
+  // Sugestões de regra/IA ficam visíveis para conferência, mas não viram
+  // empenhado/liquidado/pago até revisão humana.
   const evolucaoMensal = groupVinculosByMonth(
-    emendasResumo.flatMap((item) => item.vinculos),
+    emendasResumo.flatMap((item) =>
+      item.vinculos.filter(isFinanciallyCountableVinculo),
+    ),
   );
 
   return {
@@ -131,11 +134,6 @@ async function computeEmendasResumo(filters: EmendasFilters = {}) {
     vinculosByEmenda.set(emendaId, Array.from(merged.values()));
   }
 
-  // Eleger uma única emenda por empenho entre as não-confirmadas, para evitar
-  // que o mesmo empenho seja somado em mais de uma emenda. Confirmados/Rejeitados
-  // preservam decisão humana e não entram na eleição.
-  const empenhoOwner = electEmpenhoOwners(vinculosByEmenda);
-
   const resumo = baseEmendas.map((emenda) => {
     const vereador = vereadoresById.get(emenda.vereadorId);
     if (!vereador) {
@@ -145,9 +143,7 @@ async function computeEmendasResumo(filters: EmendasFilters = {}) {
     const emendaVinculos = (vinculosByEmenda.get(emenda.id) ?? []).filter(
       (vinculo) => vinculo.decisao !== "REJEITADO",
     );
-    const financialVinculos = emendaVinculos.filter((vinculo) =>
-      isFinanciallyCountableVinculo(vinculo, emenda.id, empenhoOwner),
-    );
+    const financialVinculos = emendaVinculos.filter(isFinanciallyCountableVinculo);
     const valorEmpenhadoBruto = sum(financialVinculos, (item) =>
       attributedValue(item, "valorEmpenhado", emenda.valorAutorizado),
     );
@@ -498,48 +494,8 @@ function vinculoKey(vinculo: { emendaId: string; empenhoId: string }) {
   return `${vinculo.emendaId}:${vinculo.empenhoId}`;
 }
 
-function isFinanciallyCountableVinculo(
-  vinculo: EmendaResumo["vinculos"][number],
-  emendaId: string,
-  empenhoOwner: Map<string, string>,
-) {
-  if (vinculo.decisao === "REJEITADO") return false;
-  if (vinculo.decisao === "CONFIRMADO") return true;
-  // SUGERIDO ou CONFERIR: só conta se esta emenda for "dona" deste empenho na eleição.
-  return empenhoOwner.get(vinculo.empenhoId) === emendaId;
-}
-
-function electEmpenhoOwners(
-  vinculosByEmenda: Map<string, EmendaResumo["vinculos"]>,
-): Map<string, string> {
-  // confirmados têm prioridade absoluta; entre os demais, vence o maior score (confiança × determinístico).
-  const confirmedOwner = new Map<string, string>();
-  type Candidate = { emendaId: string; score: number };
-  const bestSuggested = new Map<string, Candidate>();
-
-  for (const [emendaId, vinculos] of vinculosByEmenda) {
-    for (const vinculo of vinculos) {
-      if (vinculo.decisao === "REJEITADO") continue;
-      if (vinculo.decisao === "CONFIRMADO") {
-        confirmedOwner.set(vinculo.empenhoId, emendaId);
-        continue;
-      }
-      const score =
-        ((vinculo.confianca ?? 0) || (vinculo.scoreDeterministico ?? 0)) +
-        (vinculo.scoreDeterministico ?? 0) * 0.5;
-      const current = bestSuggested.get(vinculo.empenhoId);
-      if (!current || score > current.score) {
-        bestSuggested.set(vinculo.empenhoId, { emendaId, score });
-      }
-    }
-  }
-
-  const owner = new Map<string, string>();
-  for (const [empenhoId, emendaId] of confirmedOwner) owner.set(empenhoId, emendaId);
-  for (const [empenhoId, candidate] of bestSuggested) {
-    if (!owner.has(empenhoId)) owner.set(empenhoId, candidate.emendaId);
-  }
-  return owner;
+function isFinanciallyCountableVinculo(vinculo: EmendaResumo["vinculos"][number]) {
+  return vinculo.decisao === "CONFIRMADO";
 }
 
 function attributedValue(

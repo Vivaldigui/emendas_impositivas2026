@@ -42,15 +42,35 @@ const GENERIC_TOKENS = new Set([
   "equipamento",
   "equipamentos",
   "fornecimento",
+  "fundacao",
+  "fundo",
+  "itanhandu",
+  "itanhanduense",
   "material",
   "materiais",
   "municipal",
+  "municipio",
   "para",
+  "prefeitura",
   "projeto",
   "servico",
   "servicos",
   "secretaria",
   "verba",
+]);
+
+const GENERIC_CODES = new Set([
+  "administracao",
+  "assistencia",
+  "cultura",
+  "educacao",
+  "esporte",
+  "esportes",
+  "fundacao",
+  "obras",
+  "saude",
+  "social",
+  "turismo",
 ]);
 
 const STOP_TOKENS = new Set([
@@ -258,7 +278,10 @@ function scoreEmpenho(emenda: Emenda, empenho: EmpenhoRecord): ScoreResult | nul
     criterios.push("dotacao_correspondente");
   }
 
-  if (codigo && codigo.length >= 3 && (empenhoText.includes(codigo) || fornecedorText.includes(codigo))) {
+  if (
+    isSpecificCode(codigo) &&
+    (empenhoText.includes(codigo) || fornecedorText.includes(codigo))
+  ) {
     score += 0.3;
     nonValueScore += 0.3;
     criterios.push(`entidade_ou_codigo:${emenda.codigo}`);
@@ -322,7 +345,21 @@ function scoreEmpenho(emenda: Emenda, empenho: EmpenhoRecord): ScoreResult | nul
     divergencias.push("valor_distante_sem_evidencia_forte");
   }
 
-  if (nonValueScore < 0.16 || score < 0.22) {
+  const hasStrongEvidence = criterios.some((criterio) =>
+    criterio.startsWith("acao_") ||
+    criterio === "dotacao_correspondente" ||
+    criterio.startsWith("entidade_ou_codigo") ||
+    criterio === "favorecido_compativel" ||
+    criterio === "entidade_no_historico",
+  );
+  const hasSpecificObjectEvidence =
+    criterios.includes("historico_ou_objeto_compativel") && textScore >= 0.34;
+
+  if (!hasStrongEvidence && !hasSpecificObjectEvidence) {
+    return null;
+  }
+
+  if (nonValueScore < 0.22 || score < 0.3) {
     return null;
   }
 
@@ -411,6 +448,16 @@ function containsCode(haystack: string, code: string) {
     normalizedCode &&
       (haystack.includes(normalizedCode) || compactHaystack.includes(compactCode)),
   );
+}
+
+function isSpecificCode(code: string) {
+  const tokens = usefulTokens(code);
+
+  if (!tokens.length) {
+    return false;
+  }
+
+  return tokens.some((token) => !GENERIC_CODES.has(token) && !GENERIC_TOKENS.has(token));
 }
 
 function secretaryTokens(value: string) {

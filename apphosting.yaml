@@ -1,8 +1,11 @@
 runConfig:
-  # Manter ao menos 1 instância sempre quente. Sem isso, cada visita
-  # paga 30-60s de cold start (boot do container + conexão Prisma+TLS).
+  # Uma única instância sempre quente. Como o cache em memória do
+  # dashboardService é por processo, duas instâncias = dois caches
+  # independentes = requests roteados para a instância "fria" pagam
+  # 30-60s de recompute. Para tráfego de Câmara municipal, 1 instância
+  # com concurrency 80 dá conta de sobra.
   minInstances: 1
-  maxInstances: 2
+  maxInstances: 1
   concurrency: 80
   cpu: 1
   memoryMiB: 1024

@@ -8,10 +8,8 @@ import {
   isOpenAiEmpenhoEnabled,
   loadPersistedLinkState,
 } from "@/services/aiEmpenhoLinker";
-import { gerarVinculosEmendasEmpenhos } from "@/services/emendaMatcher";
 import {
   listStoredEmpenhosArtifacts,
-  loadAllEmpenhos,
   readColetaLogs,
 } from "@/services/empenhosStorage";
 import type {
@@ -92,8 +90,7 @@ async function computeDashboardData() {
 }
 
 export async function getVereadoresResumo() {
-  const [resumo, vereadoresList] = await Promise.all([getEmendasResumo(), getVereadores()]);
-  return summarizeVereadores(resumo, vereadoresList);
+  return (await getDashboardData()).vereadores;
 }
 
 // Cache do resumo sem filtros — usado por /emendas/[id] e /vereadores/[id].
@@ -116,32 +113,16 @@ export async function getEmendasResumo(filters: EmendasFilters = {}) {
 }
 
 async function computeEmendasResumo(filters: EmendasFilters = {}) {
-  const [baseEmendas, vereadoresList, empenhos] = await Promise.all([
+  const [baseEmendas, vereadoresList, persisted] = await Promise.all([
     getEmendas(),
     getVereadores(),
-    loadAllEmpenhos(),
+    safeLoadPersistedState(),
   ]);
-  const persisted = await safeLoadPersistedState();
-  const allEmpenhos = mergeEmpenhos(empenhos, persisted.empenhos);
-  const vinculos = gerarVinculosEmendasEmpenhos(allEmpenhos, baseEmendas);
-  const empenhosById = new Map(allEmpenhos.map((empenho) => [empenho.id, empenho]));
   const vereadoresById = new Map(vereadoresList.map((vereador) => [vereador.id, vereador]));
   const vinculosByEmenda = new Map<string, EmendaResumo["vinculos"]>();
 
-  for (const vinculo of vinculos) {
-    const empenho = empenhosById.get(vinculo.empenhoId);
-    if (!empenho) {
-      continue;
-    }
-
-    const list = vinculosByEmenda.get(vinculo.emendaId) ?? [];
-    list.push({ ...vinculo, empenho });
-    vinculosByEmenda.set(vinculo.emendaId, list);
-  }
-
   for (const [emendaId, persistedVinculos] of persisted.vinculosByEmenda) {
-    const current = vinculosByEmenda.get(emendaId) ?? [];
-    const merged = new Map(current.map((vinculo) => [vinculoKey(vinculo), vinculo]));
+    const merged = new Map<string, EmendaResumo["vinculos"][number]>();
 
     for (const vinculo of persistedVinculos) {
       merged.set(vinculoKey(vinculo), vinculo);
@@ -509,25 +490,8 @@ async function safeLoadPersistedState() {
     return {
       vinculosByEmenda: new Map<string, EmendaResumo["vinculos"]>(),
       analiseByEmenda: new Map<string, NonNullable<EmendaResumo["analiseIa"]>>(),
-      empenhos: [] as EmpenhoRecord[],
     };
   }
-}
-
-function mergeEmpenhos(primary: EmpenhoRecord[], secondary: EmpenhoRecord[]) {
-  const map = new Map<string, EmpenhoRecord>();
-
-  for (const empenho of primary) {
-    map.set(empenho.id, empenho);
-  }
-
-  for (const empenho of secondary) {
-    if (!map.has(empenho.id)) {
-      map.set(empenho.id, empenho);
-    }
-  }
-
-  return Array.from(map.values());
 }
 
 function vinculoKey(vinculo: { emendaId: string; empenhoId: string }) {

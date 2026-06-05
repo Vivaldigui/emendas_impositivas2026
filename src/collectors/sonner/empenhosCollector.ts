@@ -1,5 +1,12 @@
 import "dotenv/config";
 
+import {
+  constants as cryptoConstants,
+  createCipheriv,
+  publicEncrypt,
+  randomBytes,
+  randomUUID,
+} from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -22,6 +29,15 @@ type ColetarEmpenhosInput = {
   modo: "auto" | "direct" | "playwright";
   headless?: boolean;
 };
+
+const SONNER_REPORT_ENDPOINT =
+  "https://sistema.itanhandu.mg.gov.br/GRP/webservices/despesareport/analitico-empenhos";
+const SONNER_REPORT_DOWNLOAD_ENDPOINT =
+  "https://sistema.itanhandu.mg.gov.br/GRP/servlets/core/downloadReport";
+const SONNER_PORTAL_REPORT_REFERER =
+  "https://sistema.itanhandu.mg.gov.br/GRP/portal/servicos/report-analiticoempenho-ctp";
+const SONNER_PUBLIC_KEY =
+  "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAv6KQIeJ894w7Sp4yVYH3baTduRDcp5NLc3dQcjjYEkZAy0KblAjJWHLavV84tzhu+4lWMT1u/Jpd/axnrr0heustbmqhvMrOu35kkyY9b1Vlr10dIov/REkRK0WGY6ij5aGBKMgUU9QXdDTZ0A8QNWKuveKomlu5hxJhj4aC/L+lMpjChpUDBI/wKg/nQ1r+4eFeHIATX/4U4RnY506ti0DBgSebSEXOV/UyAWElZdKld9pQTBEWp33fYVjw7Go45r8qsMw/msH/9v04NQLwUDqiwQH0fLcMYyKdcKs928micVK5bQXPFk7vT8xhhCK7RsRqXND1cXnYOQN4PY/0qQIDAQAB";
 
 export async function coletarEmpenhos(input: ColetarEmpenhosInput) {
   if (input.modo === "playwright") {
@@ -53,69 +69,60 @@ export async function coletarEmpenhos(input: ColetarEmpenhosInput) {
 }
 
 async function tentarChamadaDiretaEmpenhos(input: ColetarEmpenhosInput) {
-  const endpoint = process.env.SONNER_EMPENHOS_ENDPOINT;
-
-  if (!endpoint) {
-    return {
-      ok: false,
-      status: "ERRO" as const,
-      mensagem: "Endpoint direto de empenhos nao configurado.",
-      artifact: null,
-      etapas: [],
-      erro:
-        "SONNER_EMPENHOS_ENDPOINT ausente. Use modo Playwright ou configure o endpoint capturado no DevTools.",
-    };
-  }
-
-  const payload = buildEmpenhosPayload(input);
+  const endpoint = process.env.SONNER_EMPENHOS_ENDPOINT?.trim() || SONNER_REPORT_ENDPOINT;
+  const useOfficialSonnerReport = endpoint === SONNER_REPORT_ENDPOINT;
+  const payload = useOfficialSonnerReport
+    ? buildOfficialSonnerEmpenhosPayload(input)
+    : buildEmpenhosPayload(input);
 
   try {
     const response = await fetch(endpoint, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Accept:
-          "application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, text/html, application/pdf, */*",
-        Origin: "https://sistema.itanhandu.mg.gov.br",
-        Referer: "https://sistema.itanhandu.mg.gov.br/portalcidadao/",
-        "User-Agent": "EmendasItanhandu/0.1 (+coleta-publica-empenhos)",
-      },
+      headers: buildDirectRequestHeaders(useOfficialSonnerReport),
       body: JSON.stringify(payload),
       cache: "no-store",
     });
     const contentType = response.headers.get("content-type");
     const buffer = Buffer.from(await response.arrayBuffer());
 
-    if (!response.ok || !buffer.byteLength || looksLikeErrorPayload(buffer, contentType)) {
+    if (!response.ok || !buffer.byteLength) {
       return {
         ok: false,
         status: "ERRO" as const,
         mensagem: "Chamada direta falhou.",
         artifact: null,
         etapas: [],
-        erro: `HTTP ${response.status}; resposta nao parece ser arquivo importavel.`,
+        erro: `HTTP ${response.status}; ${buffer.toString("utf8").slice(0, 500)}`,
       };
     }
 
+    const captured = looksLikeErrorPayload(buffer, contentType)
+      ? await resolveReportJsonPayload(buffer)
+      : {
+          buffer,
+          contentType,
+          endpoint,
+        };
+
     const extension = detectEmpenhosExtension({
-      buffer,
-      contentType,
+      buffer: captured.buffer,
+      contentType: captured.contentType,
       requestedFormat: input.formato,
     });
     const parsed = parseEmpenhosFile({
-      buffer,
+      buffer: captured.buffer,
       extension,
-      contentType,
+      contentType: captured.contentType,
       fonte: EMPENHOS_SOURCE,
     });
     const artifact = await saveEmpenhosArtifact({
-      buffer,
+      buffer: captured.buffer,
       inicio: input.inicio,
       fim: input.fim,
       formato: input.formato,
-      endpoint,
+      endpoint: captured.endpoint,
       parametrosJson: payload,
-      contentType,
+      contentType: captured.contentType,
       registrosBrutos: parsed.rows.length,
       registros: parsed.registros,
       warnings: parsed.warnings,
@@ -140,6 +147,211 @@ async function tentarChamadaDiretaEmpenhos(input: ColetarEmpenhosInput) {
       erro: error instanceof Error ? error.message : "Erro desconhecido.",
     };
   }
+}
+
+async function resolveReportJsonPayload(buffer: Buffer) {
+  const json = JSON.parse(buffer.toString("utf8")) as {
+    id?: number;
+    val0?: string;
+    fileName?: string;
+    hasError?: boolean;
+    error?: unknown;
+    errorMessages?: Array<{ message?: string }>;
+  };
+
+  if (json.hasError || json.error) {
+    const message =
+      json.errorMessages
+        ?.map((item) => item.message)
+        .filter(Boolean)
+        .join("; ") || JSON.stringify(json).slice(0, 500);
+
+    throw new Error(`Relatorio retornou erro: ${message}`);
+  }
+
+  if (json.id) {
+    const downloadUrl = new URL(SONNER_REPORT_DOWNLOAD_ENDPOINT);
+    downloadUrl.searchParams.set("relatorioId", String(json.id));
+    downloadUrl.searchParams.set("fileName", json.fileName ?? "analiticoEmpenhos.xlsx");
+    downloadUrl.searchParams.set("grpEmbed", "1");
+
+    const response = await fetch(downloadUrl, {
+      headers: {
+        Cookie: "dbConn=1; portalDbConn=1",
+        Referer: SONNER_PORTAL_REPORT_REFERER,
+      },
+    });
+    const fileBuffer = Buffer.from(await response.arrayBuffer());
+
+    if (!response.ok || !fileBuffer.byteLength) {
+      throw new Error(`Download do relatorio retornou HTTP ${response.status}.`);
+    }
+
+    return {
+      buffer: fileBuffer,
+      contentType: response.headers.get("content-type"),
+      endpoint: downloadUrl.toString(),
+    };
+  }
+
+  if (json.val0) {
+    const downloadUrl =
+      "https://sistema.itanhandu.mg.gov.br/GRP/servlets/portalcidadao/cadastrosgerais/downloadEncrypted?id=" +
+      json.val0;
+    const response = await fetch(downloadUrl);
+    const fileBuffer = Buffer.from(await response.arrayBuffer());
+
+    if (!response.ok || !fileBuffer.byteLength) {
+      throw new Error(`Download criptografado retornou HTTP ${response.status}.`);
+    }
+
+    return {
+      buffer: fileBuffer,
+      contentType: response.headers.get("content-type"),
+      endpoint: downloadUrl,
+    };
+  }
+
+  throw new Error(`Endpoint retornou JSON sem arquivo: ${buffer.toString("utf8").slice(0, 500)}`);
+}
+
+function buildOfficialSonnerEmpenhosPayload(input: ColetarEmpenhosInput) {
+  return {
+    "@type": "br.com.sonner.contabilidade.model.vo.report.AnaliticoEmpenhosReportFilterVO",
+    ...emptyContabilidadeReportLists(),
+    parameters: {
+      "@type": "br.com.sonner.core.client.ui.report.ReportViewParameters",
+      reportName: "analiticoEmpenhos.report",
+      formato: toSonnerReportFormat(input.formato),
+      utilizaModeloPadraoSeModeloNulo: true,
+      duracao: 0,
+      enviarNotificacao: false,
+      enviarEmail: false,
+      maxResults: 0,
+    },
+    competenciaContabilFilterReportVO: {
+      "@type": "br.com.sonner.contabilidade.model.vo.CompetenciaContabilFilterReportVO",
+      tipo: "PERIODICO",
+      inicioPeriodo: `${input.inicio.slice(0, 10)}T00:00:00.000`,
+      fimPeriodo: `${input.fim.slice(0, 10)}T00:00:00.000`,
+    },
+    idExercicioContabil: 26,
+    ano: 2026,
+    idsEntidades: [1],
+    opcaoImpresao: "Empenho",
+    opcaoQuebra: "Sem quebra",
+    situacao: "Todos",
+    empenhoOrdinario: true,
+    empenhoEstimativo: true,
+    empenhoGlobal: true,
+    listarProcessoCompra: true,
+    listarDocPagamento: true,
+    listarSubempenhos: true,
+    listarTodosEmpenhos: true,
+    listarHistorico: true,
+    ocultarEmpenhosAnulados: true,
+  };
+}
+
+function emptyContabilidadeReportLists() {
+  return {
+    idsGrupoFontesRecurso: [],
+    idsFontesRecurso: [],
+    idsSubFontesRecurso: [],
+    idsFornecedores: [],
+    idsClasseGestao: [],
+    codigosSubElementos: [],
+    idsUnidadeGestora: [],
+    intervalosFichasDespesa: [],
+    intervalosFornecedores: [],
+    intervalosFichasReceitas: [],
+    intervalosNumeroContaExtra: [],
+    intervalosFichasContaFinanceira: [],
+    intervalosGrupoFontesRecurso: [],
+    intervalosFontesRecurso: [],
+    intervalosSubFontesRecurso: [],
+    codigosAplicacao: [],
+    naturezasMovimentoDotacao: [],
+    naturezasMovimentoReceita: [],
+    naturezasMovimentacaoFinanceira: [],
+    naturezasMovimentoExtra: [],
+  };
+}
+
+function toSonnerReportFormat(formato: ColetarEmpenhosInput["formato"]) {
+  if (formato === "html") return "HTML";
+  if (formato === "pdf") return "PDF";
+  if (formato === "txt") return "TXT";
+  return "XLSX";
+}
+
+function buildDirectRequestHeaders(useOfficialSonnerReport: boolean) {
+  const base = {
+    "Content-Type": "application/json",
+    Accept:
+      "application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, text/html, application/pdf, */*",
+    Origin: "https://sistema.itanhandu.mg.gov.br",
+    Referer: useOfficialSonnerReport
+      ? SONNER_PORTAL_REPORT_REFERER
+      : "https://sistema.itanhandu.mg.gov.br/portalcidadao/",
+    "User-Agent": "EmendasItanhandu/0.1 (+coleta-publica-empenhos)",
+  };
+
+  if (!useOfficialSonnerReport) {
+    return base;
+  }
+
+  return {
+    ...base,
+    dbConn: "1",
+    "grp-embed": "1",
+    portalAuth: createPortalAuthHeader(),
+    "X-Route-URI": "/GRP/portal/servicos/report-analiticoempenho-ctp",
+    "X-System-Mnemonic": "",
+    "X-View-Name": "",
+    "If-Modified-Since": "Thu, 01 Jan 1970 00:00:01 GMT",
+    "Cache-Control": "no-cache",
+    Pragma: "no-cache",
+    Cookie: "dbConn=1; portalDbConn=1",
+  };
+}
+
+function createPortalAuthHeader() {
+  const payload = JSON.stringify({
+    payload: "SonnerSistemas",
+    nonce: randomUUID(),
+    timestamp: Date.now(),
+  });
+  const key = randomBytes(32);
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", key, iv, { authTagLength: 16 });
+  const encryptedData = Buffer.concat([
+    cipher.update(payload, "utf8"),
+    cipher.final(),
+    cipher.getAuthTag(),
+  ]);
+  const encryptedKey = publicEncrypt(
+    {
+      key: publicKeyPem(),
+      padding: cryptoConstants.RSA_PKCS1_OAEP_PADDING,
+      oaepHash: "sha256",
+    },
+    key,
+  );
+
+  return JSON.stringify({
+    encryptedData: base64Url(encryptedData),
+    encryptedKey: base64Url(encryptedKey),
+    iv: base64Url(iv),
+  });
+}
+
+function publicKeyPem() {
+  return `-----BEGIN PUBLIC KEY-----\n${SONNER_PUBLIC_KEY.match(/.{1,64}/g)?.join("\n")}\n-----END PUBLIC KEY-----`;
+}
+
+function base64Url(buffer: Buffer) {
+  return buffer.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
 function buildEmpenhosPayload(input: ColetarEmpenhosInput) {

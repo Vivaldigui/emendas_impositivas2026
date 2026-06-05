@@ -7,21 +7,10 @@ import { TimelineExecucao } from "@/components/dashboard/timeline-execucao";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { getEmendas } from "@/services/emendasRepository";
 import { getEmendasResumo } from "@/services/dashboardService";
 import { formatCurrency, formatDate, formatPercent } from "@/lib/utils";
 
-export const revalidate = 60;
-// Pré-gera no build as 93 emendas; novas IDs caem no fallback dinâmico.
-export const dynamicParams = true;
-export async function generateStaticParams() {
-  try {
-    const emendas = await getEmendas();
-    return emendas.map((emenda) => ({ id: emenda.id }));
-  } catch {
-    return [];
-  }
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata(props: {
   params: Promise<{ id: string }>;

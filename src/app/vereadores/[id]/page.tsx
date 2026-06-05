@@ -8,19 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { getEmendasResumo, getVereadoresResumo } from "@/services/dashboardService";
-import { getVereadores } from "@/services/emendasRepository";
 import { formatCurrency, formatPercent } from "@/lib/utils";
 
-export const revalidate = 60;
-export const dynamicParams = true;
-export async function generateStaticParams() {
-  try {
-    const vereadores = await getVereadores();
-    return vereadores.map((vereador) => ({ id: vereador.id }));
-  } catch {
-    return [];
-  }
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata(props: {
   params: Promise<{ id: string }>;

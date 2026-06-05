@@ -28,9 +28,9 @@ const MANDATORY_PROMPT_RULE =
   "Não invente vínculos financeiros. Analise somente os empenhos candidatos fornecidos. Quando houver qualquer dúvida relevante, retorne CONFERIR. Quando nenhum candidato apresentar evidências suficientes, retorne SEM_VINCULO. Nunca trate semelhança de valor, isoladamente, como prova de vínculo.";
 const DEFAULT_MODEL = "gpt-4o-mini";
 const MAX_CANDIDATES = 5;
-const DEFAULT_CONCURRENCY = 2;
+const DEFAULT_CONCURRENCY = 1;
 const OPENAI_TIMEOUT_MS = 25_000;
-const OPENAI_MAX_RETRIES = 1;
+const OPENAI_MAX_RETRIES = 3;
 
 const AiEmpenhoLinkResultSchema = z.object({
   emendaId: z.string(),
@@ -282,7 +282,7 @@ export async function analisarUmaEmenda(
       iaDisponivel,
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Erro desconhecido na analise.";
+    const message = humanizeOpenAiError(error);
 
     if (!options.dryRun) {
       await persistAnalise({
@@ -336,7 +336,7 @@ export function validateAiResult(
 }
 
 export async function loadPersistedLinkState() {
-  const [vinculos, analises, dbEmpenhos] = await Promise.all([
+  const [vinculos, analises] = await Promise.all([
     prisma.emendaEmpenhoVinculo.findMany({
       include: { empenho: true },
       orderBy: { atualizadoEm: "desc" },
@@ -344,10 +344,8 @@ export async function loadPersistedLinkState() {
     prisma.analiseIaEmenda.findMany({
       orderBy: { dataAnalise: "desc" },
     }),
-    prisma.empenho.findMany(),
   ]);
 
-  const empenhos = dbEmpenhos.map(dbEmpenhoToRecord);
   const vinculosByEmenda = new Map<string, Array<EmendaEmpenhoVinculo & { empenho: EmpenhoRecord }>>();
   const analiseByEmenda = new Map<string, AnaliseIaResumo>();
 
@@ -364,7 +362,7 @@ export async function loadPersistedLinkState() {
     vinculosByEmenda.set(vinculo.emendaId, current);
   }
 
-  return { vinculosByEmenda, analiseByEmenda, empenhos };
+  return { vinculosByEmenda, analiseByEmenda };
 }
 
 export async function revisarVinculo(input: ReviewInput) {
@@ -1123,7 +1121,7 @@ async function retryTemporary<T>(fn: () => Promise<T>, retries: number): Promise
       if (attempt >= retries || !isTemporaryOpenAiError(error)) {
         break;
       }
-      await new Promise((resolve) => setTimeout(resolve, 600 * (attempt + 1)));
+      await new Promise((resolve) => setTimeout(resolve, retryDelayMs(error, attempt)));
     }
   }
 
@@ -1137,6 +1135,49 @@ function isTemporaryOpenAiError(error: unknown) {
   const message = error instanceof Error ? error.message.toLowerCase() : "";
 
   return status === 429 || status >= 500 || message.includes("timeout") || message.includes("network");
+}
+
+function retryDelayMs(error: unknown, attempt: number) {
+  const retryAfter = readRetryAfterMs(error);
+  if (retryAfter !== null) {
+    return Math.min(retryAfter, 30_000);
+  }
+
+  return Math.min(2_000 * 2 ** attempt, 12_000);
+}
+
+function readRetryAfterMs(error: unknown) {
+  if (!error || typeof error !== "object" || !("headers" in error)) {
+    return null;
+  }
+
+  const headers = (error as { headers?: unknown }).headers;
+  const rawValue =
+    headers && typeof headers === "object" && "get" in headers
+      ? (headers as { get(name: string): string | null }).get("retry-after")
+      : null;
+  const seconds = Number(rawValue);
+
+  return Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : null;
+}
+
+function humanizeOpenAiError(error: unknown) {
+  const status =
+    typeof error === "object" && error && "status" in error
+      ? Number((error as { status?: unknown }).status)
+      : 0;
+  const message = error instanceof Error ? error.message : "Erro desconhecido na analise.";
+  const normalized = message.toLowerCase();
+
+  if (status === 429 || normalized.includes("rate") || normalized.includes("quota")) {
+    return "Limite temporario da OpenAI atingido. Aguarde alguns minutos e execute a analise novamente, ou analise uma emenda por vez.";
+  }
+
+  if (normalized.includes("timeout")) {
+    return "A OpenAI demorou para responder. Tente novamente em alguns minutos.";
+  }
+
+  return message;
 }
 
 function mergeStrings(...lists: Array<string[] | undefined>) {

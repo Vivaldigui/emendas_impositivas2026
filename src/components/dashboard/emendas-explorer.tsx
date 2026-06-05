@@ -116,6 +116,11 @@ export function EmendasExplorer({
   }
 
   async function analyze(options: { emendaIds?: string[]; reanalisar?: boolean }) {
+    if (!adminSecret.trim()) {
+      setMessage("Informe o segredo admin antes de executar a análise por IA.");
+      return;
+    }
+
     setBusyAction(options.emendaIds?.[0] ?? "all");
     setMessage(null);
 
@@ -124,14 +129,18 @@ export function EmendasExplorer({
         method: "POST",
         headers: {
           "content-type": "application/json",
-          ...(adminSecret ? { "x-admin-secret": adminSecret } : {}),
+          "x-admin-secret": adminSecret.trim(),
         },
         body: JSON.stringify(options),
       });
       const payload = await response.json();
 
       if (!response.ok) {
-        throw new Error(payload.error ?? "Falha ao executar análise.");
+        throw new Error(formatApiError(payload.error ?? "Falha ao executar análise."));
+      }
+
+      if (payload.ok === false) {
+        throw new Error(formatBatchError(payload));
       }
 
       setMessage(
@@ -174,6 +183,11 @@ export function EmendasExplorer({
       body.permitirExcedente = reviewPermitirExcedente;
     }
 
+    if (!adminSecret.trim()) {
+      setMessage("Informe o segredo admin antes de revisar vínculos.");
+      return;
+    }
+
     setBusyAction(vinculo.id ?? "review");
     setMessage(null);
 
@@ -182,14 +196,14 @@ export function EmendasExplorer({
         method: "POST",
         headers: {
           "content-type": "application/json",
-          ...(adminSecret ? { "x-admin-secret": adminSecret } : {}),
+          "x-admin-secret": adminSecret.trim(),
         },
         body: JSON.stringify(body),
       });
       const payload = await response.json();
 
       if (!response.ok) {
-        throw new Error(payload.error ?? "Falha ao revisar vínculo.");
+        throw new Error(formatApiError(payload.error ?? "Falha ao revisar vínculo."));
       }
 
       setMessage("Revisão registrada com auditoria.");
@@ -769,4 +783,36 @@ function analysisLabel(resultado: string) {
     return "Sem vínculo localizado";
   }
   return "Erro na análise";
+}
+
+function formatApiError(message: string) {
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes("nao autorizado") || normalized.includes("não autorizado")) {
+    return "Nao autorizado. Confira o segredo admin informado.";
+  }
+
+  if (
+    normalized.includes("rate exceeded") ||
+    normalized.includes("rate limit") ||
+    normalized.includes("429") ||
+    normalized.includes("quota")
+  ) {
+    return "Limite temporario da OpenAI atingido. Aguarde alguns minutos e tente novamente, preferencialmente em uma emenda por vez.";
+  }
+
+  return message;
+}
+
+function formatBatchError(payload: {
+  resumo?: { erros?: number };
+  resultados?: Array<{ erro?: string }>;
+}) {
+  const firstError = payload.resultados?.find((result) => result.erro)?.erro;
+  const errorCount = payload.resumo?.erros ?? 0;
+  const formatted = firstError ? formatApiError(firstError) : null;
+
+  return formatted
+    ? `Analise finalizada com ${errorCount} erro(s): ${formatted}`
+    : `Analise finalizada com ${errorCount} erro(s). Confira o historico de analises.`;
 }

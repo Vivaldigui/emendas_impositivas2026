@@ -388,6 +388,8 @@ export const ModelName = {
   Emenda: 'Emenda',
   Empenho: 'Empenho',
   EmendaEmpenhoVinculo: 'EmendaEmpenhoVinculo',
+  AnaliseIaEmenda: 'AnaliseIaEmenda',
+  EmendaEmpenhoRevisao: 'EmendaEmpenhoRevisao',
   ColetaEmpenhosArquivo: 'ColetaEmpenhosArquivo',
   ColetaLog: 'ColetaLog'
 } as const
@@ -405,7 +407,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "vereador" | "emenda" | "empenho" | "emendaEmpenhoVinculo" | "coletaEmpenhosArquivo" | "coletaLog"
+    modelProps: "vereador" | "emenda" | "empenho" | "emendaEmpenhoVinculo" | "analiseIaEmenda" | "emendaEmpenhoRevisao" | "coletaEmpenhosArquivo" | "coletaLog"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -705,6 +707,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    AnaliseIaEmenda: {
+      payload: Prisma.$AnaliseIaEmendaPayload<ExtArgs>
+      fields: Prisma.AnaliseIaEmendaFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AnaliseIaEmendaFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnaliseIaEmendaPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AnaliseIaEmendaFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnaliseIaEmendaPayload>
+        }
+        findFirst: {
+          args: Prisma.AnaliseIaEmendaFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnaliseIaEmendaPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AnaliseIaEmendaFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnaliseIaEmendaPayload>
+        }
+        findMany: {
+          args: Prisma.AnaliseIaEmendaFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnaliseIaEmendaPayload>[]
+        }
+        create: {
+          args: Prisma.AnaliseIaEmendaCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnaliseIaEmendaPayload>
+        }
+        createMany: {
+          args: Prisma.AnaliseIaEmendaCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.AnaliseIaEmendaCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnaliseIaEmendaPayload>[]
+        }
+        delete: {
+          args: Prisma.AnaliseIaEmendaDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnaliseIaEmendaPayload>
+        }
+        update: {
+          args: Prisma.AnaliseIaEmendaUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnaliseIaEmendaPayload>
+        }
+        deleteMany: {
+          args: Prisma.AnaliseIaEmendaDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AnaliseIaEmendaUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.AnaliseIaEmendaUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnaliseIaEmendaPayload>[]
+        }
+        upsert: {
+          args: Prisma.AnaliseIaEmendaUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnaliseIaEmendaPayload>
+        }
+        aggregate: {
+          args: Prisma.AnaliseIaEmendaAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAnaliseIaEmenda>
+        }
+        groupBy: {
+          args: Prisma.AnaliseIaEmendaGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AnaliseIaEmendaGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AnaliseIaEmendaCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AnaliseIaEmendaCountAggregateOutputType> | number
+        }
+      }
+    }
+    EmendaEmpenhoRevisao: {
+      payload: Prisma.$EmendaEmpenhoRevisaoPayload<ExtArgs>
+      fields: Prisma.EmendaEmpenhoRevisaoFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.EmendaEmpenhoRevisaoFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmendaEmpenhoRevisaoPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.EmendaEmpenhoRevisaoFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmendaEmpenhoRevisaoPayload>
+        }
+        findFirst: {
+          args: Prisma.EmendaEmpenhoRevisaoFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmendaEmpenhoRevisaoPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.EmendaEmpenhoRevisaoFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmendaEmpenhoRevisaoPayload>
+        }
+        findMany: {
+          args: Prisma.EmendaEmpenhoRevisaoFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmendaEmpenhoRevisaoPayload>[]
+        }
+        create: {
+          args: Prisma.EmendaEmpenhoRevisaoCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmendaEmpenhoRevisaoPayload>
+        }
+        createMany: {
+          args: Prisma.EmendaEmpenhoRevisaoCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.EmendaEmpenhoRevisaoCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmendaEmpenhoRevisaoPayload>[]
+        }
+        delete: {
+          args: Prisma.EmendaEmpenhoRevisaoDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmendaEmpenhoRevisaoPayload>
+        }
+        update: {
+          args: Prisma.EmendaEmpenhoRevisaoUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmendaEmpenhoRevisaoPayload>
+        }
+        deleteMany: {
+          args: Prisma.EmendaEmpenhoRevisaoDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.EmendaEmpenhoRevisaoUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.EmendaEmpenhoRevisaoUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmendaEmpenhoRevisaoPayload>[]
+        }
+        upsert: {
+          args: Prisma.EmendaEmpenhoRevisaoUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmendaEmpenhoRevisaoPayload>
+        }
+        aggregate: {
+          args: Prisma.EmendaEmpenhoRevisaoAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateEmendaEmpenhoRevisao>
+        }
+        groupBy: {
+          args: Prisma.EmendaEmpenhoRevisaoGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EmendaEmpenhoRevisaoGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.EmendaEmpenhoRevisaoCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EmendaEmpenhoRevisaoCountAggregateOutputType> | number
+        }
+      }
+    }
     ColetaEmpenhosArquivo: {
       payload: Prisma.$ColetaEmpenhosArquivoPayload<ExtArgs>
       fields: Prisma.ColetaEmpenhosArquivoFieldRefs
@@ -949,10 +1099,56 @@ export const EmendaEmpenhoVinculoScalarFieldEnum = {
   empenhoId: 'empenhoId',
   criterio: 'criterio',
   confianca: 'confianca',
-  observacao: 'observacao'
+  observacao: 'observacao',
+  valorAtribuido: 'valorAtribuido',
+  origem: 'origem',
+  decisao: 'decisao',
+  criterios: 'criterios',
+  justificativaCurta: 'justificativaCurta',
+  camposUsados: 'camposUsados',
+  modelo: 'modelo',
+  promptVersion: 'promptVersion',
+  inputHash: 'inputHash',
+  criadoEm: 'criadoEm',
+  atualizadoEm: 'atualizadoEm',
+  revisadoEm: 'revisadoEm',
+  revisadoPor: 'revisadoPor'
 } as const
 
 export type EmendaEmpenhoVinculoScalarFieldEnum = (typeof EmendaEmpenhoVinculoScalarFieldEnum)[keyof typeof EmendaEmpenhoVinculoScalarFieldEnum]
+
+
+export const AnaliseIaEmendaScalarFieldEnum = {
+  id: 'id',
+  emendaId: 'emendaId',
+  resultadoGeral: 'resultadoGeral',
+  dataAnalise: 'dataAnalise',
+  modelo: 'modelo',
+  promptVersion: 'promptVersion',
+  inputHash: 'inputHash',
+  quantidadeCandidatos: 'quantidadeCandidatos',
+  justificativa: 'justificativa',
+  erro: 'erro'
+} as const
+
+export type AnaliseIaEmendaScalarFieldEnum = (typeof AnaliseIaEmendaScalarFieldEnum)[keyof typeof AnaliseIaEmendaScalarFieldEnum]
+
+
+export const EmendaEmpenhoRevisaoScalarFieldEnum = {
+  id: 'id',
+  vinculoId: 'vinculoId',
+  emendaId: 'emendaId',
+  empenhoId: 'empenhoId',
+  situacaoAnterior: 'situacaoAnterior',
+  situacaoNova: 'situacaoNova',
+  valorAnterior: 'valorAnterior',
+  valorNovo: 'valorNovo',
+  justificativa: 'justificativa',
+  revisadoPor: 'revisadoPor',
+  revisadoEm: 'revisadoEm'
+} as const
+
+export type EmendaEmpenhoRevisaoScalarFieldEnum = (typeof EmendaEmpenhoRevisaoScalarFieldEnum)[keyof typeof EmendaEmpenhoRevisaoScalarFieldEnum]
 
 
 export const ColetaEmpenhosArquivoScalarFieldEnum = {
@@ -1241,6 +1437,8 @@ export type GlobalOmitConfig = {
   emenda?: Prisma.EmendaOmit
   empenho?: Prisma.EmpenhoOmit
   emendaEmpenhoVinculo?: Prisma.EmendaEmpenhoVinculoOmit
+  analiseIaEmenda?: Prisma.AnaliseIaEmendaOmit
+  emendaEmpenhoRevisao?: Prisma.EmendaEmpenhoRevisaoOmit
   coletaEmpenhosArquivo?: Prisma.ColetaEmpenhosArquivoOmit
   coletaLog?: Prisma.ColetaLogOmit
 }

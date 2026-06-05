@@ -28,10 +28,12 @@ export type AggregateEmendaEmpenhoVinculo = {
 
 export type EmendaEmpenhoVinculoAvgAggregateOutputType = {
   confianca: runtime.Decimal | null
+  valorAtribuido: runtime.Decimal | null
 }
 
 export type EmendaEmpenhoVinculoSumAggregateOutputType = {
   confianca: runtime.Decimal | null
+  valorAtribuido: runtime.Decimal | null
 }
 
 export type EmendaEmpenhoVinculoMinAggregateOutputType = {
@@ -41,6 +43,17 @@ export type EmendaEmpenhoVinculoMinAggregateOutputType = {
   criterio: string | null
   confianca: runtime.Decimal | null
   observacao: string | null
+  valorAtribuido: runtime.Decimal | null
+  origem: string | null
+  decisao: string | null
+  justificativaCurta: string | null
+  modelo: string | null
+  promptVersion: string | null
+  inputHash: string | null
+  criadoEm: Date | null
+  atualizadoEm: Date | null
+  revisadoEm: Date | null
+  revisadoPor: string | null
 }
 
 export type EmendaEmpenhoVinculoMaxAggregateOutputType = {
@@ -50,6 +63,17 @@ export type EmendaEmpenhoVinculoMaxAggregateOutputType = {
   criterio: string | null
   confianca: runtime.Decimal | null
   observacao: string | null
+  valorAtribuido: runtime.Decimal | null
+  origem: string | null
+  decisao: string | null
+  justificativaCurta: string | null
+  modelo: string | null
+  promptVersion: string | null
+  inputHash: string | null
+  criadoEm: Date | null
+  atualizadoEm: Date | null
+  revisadoEm: Date | null
+  revisadoPor: string | null
 }
 
 export type EmendaEmpenhoVinculoCountAggregateOutputType = {
@@ -59,16 +83,31 @@ export type EmendaEmpenhoVinculoCountAggregateOutputType = {
   criterio: number
   confianca: number
   observacao: number
+  valorAtribuido: number
+  origem: number
+  decisao: number
+  criterios: number
+  justificativaCurta: number
+  camposUsados: number
+  modelo: number
+  promptVersion: number
+  inputHash: number
+  criadoEm: number
+  atualizadoEm: number
+  revisadoEm: number
+  revisadoPor: number
   _all: number
 }
 
 
 export type EmendaEmpenhoVinculoAvgAggregateInputType = {
   confianca?: true
+  valorAtribuido?: true
 }
 
 export type EmendaEmpenhoVinculoSumAggregateInputType = {
   confianca?: true
+  valorAtribuido?: true
 }
 
 export type EmendaEmpenhoVinculoMinAggregateInputType = {
@@ -78,6 +117,17 @@ export type EmendaEmpenhoVinculoMinAggregateInputType = {
   criterio?: true
   confianca?: true
   observacao?: true
+  valorAtribuido?: true
+  origem?: true
+  decisao?: true
+  justificativaCurta?: true
+  modelo?: true
+  promptVersion?: true
+  inputHash?: true
+  criadoEm?: true
+  atualizadoEm?: true
+  revisadoEm?: true
+  revisadoPor?: true
 }
 
 export type EmendaEmpenhoVinculoMaxAggregateInputType = {
@@ -87,6 +137,17 @@ export type EmendaEmpenhoVinculoMaxAggregateInputType = {
   criterio?: true
   confianca?: true
   observacao?: true
+  valorAtribuido?: true
+  origem?: true
+  decisao?: true
+  justificativaCurta?: true
+  modelo?: true
+  promptVersion?: true
+  inputHash?: true
+  criadoEm?: true
+  atualizadoEm?: true
+  revisadoEm?: true
+  revisadoPor?: true
 }
 
 export type EmendaEmpenhoVinculoCountAggregateInputType = {
@@ -96,6 +157,19 @@ export type EmendaEmpenhoVinculoCountAggregateInputType = {
   criterio?: true
   confianca?: true
   observacao?: true
+  valorAtribuido?: true
+  origem?: true
+  decisao?: true
+  criterios?: true
+  justificativaCurta?: true
+  camposUsados?: true
+  modelo?: true
+  promptVersion?: true
+  inputHash?: true
+  criadoEm?: true
+  atualizadoEm?: true
+  revisadoEm?: true
+  revisadoPor?: true
   _all?: true
 }
 
@@ -190,8 +264,21 @@ export type EmendaEmpenhoVinculoGroupByOutputType = {
   emendaId: string
   empenhoId: string
   criterio: string
-  confianca: runtime.Decimal
+  confianca: runtime.Decimal | null
   observacao: string
+  valorAtribuido: runtime.Decimal | null
+  origem: string
+  decisao: string
+  criterios: string[]
+  justificativaCurta: string | null
+  camposUsados: string[]
+  modelo: string | null
+  promptVersion: string | null
+  inputHash: string | null
+  criadoEm: Date
+  atualizadoEm: Date
+  revisadoEm: Date | null
+  revisadoPor: string | null
   _count: EmendaEmpenhoVinculoCountAggregateOutputType | null
   _avg: EmendaEmpenhoVinculoAvgAggregateOutputType | null
   _sum: EmendaEmpenhoVinculoSumAggregateOutputType | null
@@ -222,10 +309,24 @@ export type EmendaEmpenhoVinculoWhereInput = {
   emendaId?: Prisma.StringFilter<"EmendaEmpenhoVinculo"> | string
   empenhoId?: Prisma.StringFilter<"EmendaEmpenhoVinculo"> | string
   criterio?: Prisma.StringFilter<"EmendaEmpenhoVinculo"> | string
-  confianca?: Prisma.DecimalFilter<"EmendaEmpenhoVinculo"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  confianca?: Prisma.DecimalNullableFilter<"EmendaEmpenhoVinculo"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   observacao?: Prisma.StringFilter<"EmendaEmpenhoVinculo"> | string
+  valorAtribuido?: Prisma.DecimalNullableFilter<"EmendaEmpenhoVinculo"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  origem?: Prisma.StringFilter<"EmendaEmpenhoVinculo"> | string
+  decisao?: Prisma.StringFilter<"EmendaEmpenhoVinculo"> | string
+  criterios?: Prisma.StringNullableListFilter<"EmendaEmpenhoVinculo">
+  justificativaCurta?: Prisma.StringNullableFilter<"EmendaEmpenhoVinculo"> | string | null
+  camposUsados?: Prisma.StringNullableListFilter<"EmendaEmpenhoVinculo">
+  modelo?: Prisma.StringNullableFilter<"EmendaEmpenhoVinculo"> | string | null
+  promptVersion?: Prisma.StringNullableFilter<"EmendaEmpenhoVinculo"> | string | null
+  inputHash?: Prisma.StringNullableFilter<"EmendaEmpenhoVinculo"> | string | null
+  criadoEm?: Prisma.DateTimeFilter<"EmendaEmpenhoVinculo"> | Date | string
+  atualizadoEm?: Prisma.DateTimeFilter<"EmendaEmpenhoVinculo"> | Date | string
+  revisadoEm?: Prisma.DateTimeNullableFilter<"EmendaEmpenhoVinculo"> | Date | string | null
+  revisadoPor?: Prisma.StringNullableFilter<"EmendaEmpenhoVinculo"> | string | null
   emenda?: Prisma.XOR<Prisma.EmendaScalarRelationFilter, Prisma.EmendaWhereInput>
   empenho?: Prisma.XOR<Prisma.EmpenhoScalarRelationFilter, Prisma.EmpenhoWhereInput>
+  revisoes?: Prisma.EmendaEmpenhoRevisaoListRelationFilter
 }
 
 export type EmendaEmpenhoVinculoOrderByWithRelationInput = {
@@ -233,10 +334,24 @@ export type EmendaEmpenhoVinculoOrderByWithRelationInput = {
   emendaId?: Prisma.SortOrder
   empenhoId?: Prisma.SortOrder
   criterio?: Prisma.SortOrder
-  confianca?: Prisma.SortOrder
+  confianca?: Prisma.SortOrderInput | Prisma.SortOrder
   observacao?: Prisma.SortOrder
+  valorAtribuido?: Prisma.SortOrderInput | Prisma.SortOrder
+  origem?: Prisma.SortOrder
+  decisao?: Prisma.SortOrder
+  criterios?: Prisma.SortOrder
+  justificativaCurta?: Prisma.SortOrderInput | Prisma.SortOrder
+  camposUsados?: Prisma.SortOrder
+  modelo?: Prisma.SortOrderInput | Prisma.SortOrder
+  promptVersion?: Prisma.SortOrderInput | Prisma.SortOrder
+  inputHash?: Prisma.SortOrderInput | Prisma.SortOrder
+  criadoEm?: Prisma.SortOrder
+  atualizadoEm?: Prisma.SortOrder
+  revisadoEm?: Prisma.SortOrderInput | Prisma.SortOrder
+  revisadoPor?: Prisma.SortOrderInput | Prisma.SortOrder
   emenda?: Prisma.EmendaOrderByWithRelationInput
   empenho?: Prisma.EmpenhoOrderByWithRelationInput
+  revisoes?: Prisma.EmendaEmpenhoRevisaoOrderByRelationAggregateInput
 }
 
 export type EmendaEmpenhoVinculoWhereUniqueInput = Prisma.AtLeast<{
@@ -248,10 +363,24 @@ export type EmendaEmpenhoVinculoWhereUniqueInput = Prisma.AtLeast<{
   emendaId?: Prisma.StringFilter<"EmendaEmpenhoVinculo"> | string
   empenhoId?: Prisma.StringFilter<"EmendaEmpenhoVinculo"> | string
   criterio?: Prisma.StringFilter<"EmendaEmpenhoVinculo"> | string
-  confianca?: Prisma.DecimalFilter<"EmendaEmpenhoVinculo"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  confianca?: Prisma.DecimalNullableFilter<"EmendaEmpenhoVinculo"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   observacao?: Prisma.StringFilter<"EmendaEmpenhoVinculo"> | string
+  valorAtribuido?: Prisma.DecimalNullableFilter<"EmendaEmpenhoVinculo"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  origem?: Prisma.StringFilter<"EmendaEmpenhoVinculo"> | string
+  decisao?: Prisma.StringFilter<"EmendaEmpenhoVinculo"> | string
+  criterios?: Prisma.StringNullableListFilter<"EmendaEmpenhoVinculo">
+  justificativaCurta?: Prisma.StringNullableFilter<"EmendaEmpenhoVinculo"> | string | null
+  camposUsados?: Prisma.StringNullableListFilter<"EmendaEmpenhoVinculo">
+  modelo?: Prisma.StringNullableFilter<"EmendaEmpenhoVinculo"> | string | null
+  promptVersion?: Prisma.StringNullableFilter<"EmendaEmpenhoVinculo"> | string | null
+  inputHash?: Prisma.StringNullableFilter<"EmendaEmpenhoVinculo"> | string | null
+  criadoEm?: Prisma.DateTimeFilter<"EmendaEmpenhoVinculo"> | Date | string
+  atualizadoEm?: Prisma.DateTimeFilter<"EmendaEmpenhoVinculo"> | Date | string
+  revisadoEm?: Prisma.DateTimeNullableFilter<"EmendaEmpenhoVinculo"> | Date | string | null
+  revisadoPor?: Prisma.StringNullableFilter<"EmendaEmpenhoVinculo"> | string | null
   emenda?: Prisma.XOR<Prisma.EmendaScalarRelationFilter, Prisma.EmendaWhereInput>
   empenho?: Prisma.XOR<Prisma.EmpenhoScalarRelationFilter, Prisma.EmpenhoWhereInput>
+  revisoes?: Prisma.EmendaEmpenhoRevisaoListRelationFilter
 }, "id" | "emendaId_empenhoId">
 
 export type EmendaEmpenhoVinculoOrderByWithAggregationInput = {
@@ -259,8 +388,21 @@ export type EmendaEmpenhoVinculoOrderByWithAggregationInput = {
   emendaId?: Prisma.SortOrder
   empenhoId?: Prisma.SortOrder
   criterio?: Prisma.SortOrder
-  confianca?: Prisma.SortOrder
+  confianca?: Prisma.SortOrderInput | Prisma.SortOrder
   observacao?: Prisma.SortOrder
+  valorAtribuido?: Prisma.SortOrderInput | Prisma.SortOrder
+  origem?: Prisma.SortOrder
+  decisao?: Prisma.SortOrder
+  criterios?: Prisma.SortOrder
+  justificativaCurta?: Prisma.SortOrderInput | Prisma.SortOrder
+  camposUsados?: Prisma.SortOrder
+  modelo?: Prisma.SortOrderInput | Prisma.SortOrder
+  promptVersion?: Prisma.SortOrderInput | Prisma.SortOrder
+  inputHash?: Prisma.SortOrderInput | Prisma.SortOrder
+  criadoEm?: Prisma.SortOrder
+  atualizadoEm?: Prisma.SortOrder
+  revisadoEm?: Prisma.SortOrderInput | Prisma.SortOrder
+  revisadoPor?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.EmendaEmpenhoVinculoCountOrderByAggregateInput
   _avg?: Prisma.EmendaEmpenhoVinculoAvgOrderByAggregateInput
   _max?: Prisma.EmendaEmpenhoVinculoMaxOrderByAggregateInput
@@ -276,17 +418,44 @@ export type EmendaEmpenhoVinculoScalarWhereWithAggregatesInput = {
   emendaId?: Prisma.StringWithAggregatesFilter<"EmendaEmpenhoVinculo"> | string
   empenhoId?: Prisma.StringWithAggregatesFilter<"EmendaEmpenhoVinculo"> | string
   criterio?: Prisma.StringWithAggregatesFilter<"EmendaEmpenhoVinculo"> | string
-  confianca?: Prisma.DecimalWithAggregatesFilter<"EmendaEmpenhoVinculo"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  confianca?: Prisma.DecimalNullableWithAggregatesFilter<"EmendaEmpenhoVinculo"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   observacao?: Prisma.StringWithAggregatesFilter<"EmendaEmpenhoVinculo"> | string
+  valorAtribuido?: Prisma.DecimalNullableWithAggregatesFilter<"EmendaEmpenhoVinculo"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  origem?: Prisma.StringWithAggregatesFilter<"EmendaEmpenhoVinculo"> | string
+  decisao?: Prisma.StringWithAggregatesFilter<"EmendaEmpenhoVinculo"> | string
+  criterios?: Prisma.StringNullableListFilter<"EmendaEmpenhoVinculo">
+  justificativaCurta?: Prisma.StringNullableWithAggregatesFilter<"EmendaEmpenhoVinculo"> | string | null
+  camposUsados?: Prisma.StringNullableListFilter<"EmendaEmpenhoVinculo">
+  modelo?: Prisma.StringNullableWithAggregatesFilter<"EmendaEmpenhoVinculo"> | string | null
+  promptVersion?: Prisma.StringNullableWithAggregatesFilter<"EmendaEmpenhoVinculo"> | string | null
+  inputHash?: Prisma.StringNullableWithAggregatesFilter<"EmendaEmpenhoVinculo"> | string | null
+  criadoEm?: Prisma.DateTimeWithAggregatesFilter<"EmendaEmpenhoVinculo"> | Date | string
+  atualizadoEm?: Prisma.DateTimeWithAggregatesFilter<"EmendaEmpenhoVinculo"> | Date | string
+  revisadoEm?: Prisma.DateTimeNullableWithAggregatesFilter<"EmendaEmpenhoVinculo"> | Date | string | null
+  revisadoPor?: Prisma.StringNullableWithAggregatesFilter<"EmendaEmpenhoVinculo"> | string | null
 }
 
 export type EmendaEmpenhoVinculoCreateInput = {
   id?: string
   criterio: string
-  confianca: runtime.Decimal | runtime.DecimalJsLike | number | string
+  confianca?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   observacao: string
+  valorAtribuido?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  origem?: string
+  decisao?: string
+  criterios?: Prisma.EmendaEmpenhoVinculoCreatecriteriosInput | string[]
+  justificativaCurta?: string | null
+  camposUsados?: Prisma.EmendaEmpenhoVinculoCreatecamposUsadosInput | string[]
+  modelo?: string | null
+  promptVersion?: string | null
+  inputHash?: string | null
+  criadoEm?: Date | string
+  atualizadoEm?: Date | string
+  revisadoEm?: Date | string | null
+  revisadoPor?: string | null
   emenda: Prisma.EmendaCreateNestedOneWithoutVinculosInput
   empenho: Prisma.EmpenhoCreateNestedOneWithoutVinculosInput
+  revisoes?: Prisma.EmendaEmpenhoRevisaoCreateNestedManyWithoutVinculoInput
 }
 
 export type EmendaEmpenhoVinculoUncheckedCreateInput = {
@@ -294,17 +463,45 @@ export type EmendaEmpenhoVinculoUncheckedCreateInput = {
   emendaId: string
   empenhoId: string
   criterio: string
-  confianca: runtime.Decimal | runtime.DecimalJsLike | number | string
+  confianca?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   observacao: string
+  valorAtribuido?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  origem?: string
+  decisao?: string
+  criterios?: Prisma.EmendaEmpenhoVinculoCreatecriteriosInput | string[]
+  justificativaCurta?: string | null
+  camposUsados?: Prisma.EmendaEmpenhoVinculoCreatecamposUsadosInput | string[]
+  modelo?: string | null
+  promptVersion?: string | null
+  inputHash?: string | null
+  criadoEm?: Date | string
+  atualizadoEm?: Date | string
+  revisadoEm?: Date | string | null
+  revisadoPor?: string | null
+  revisoes?: Prisma.EmendaEmpenhoRevisaoUncheckedCreateNestedManyWithoutVinculoInput
 }
 
 export type EmendaEmpenhoVinculoUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   criterio?: Prisma.StringFieldUpdateOperationsInput | string
-  confianca?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  confianca?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   observacao?: Prisma.StringFieldUpdateOperationsInput | string
+  valorAtribuido?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  origem?: Prisma.StringFieldUpdateOperationsInput | string
+  decisao?: Prisma.StringFieldUpdateOperationsInput | string
+  criterios?: Prisma.EmendaEmpenhoVinculoUpdatecriteriosInput | string[]
+  justificativaCurta?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  camposUsados?: Prisma.EmendaEmpenhoVinculoUpdatecamposUsadosInput | string[]
+  modelo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  promptVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inputHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  revisadoEm?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  revisadoPor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   emenda?: Prisma.EmendaUpdateOneRequiredWithoutVinculosNestedInput
   empenho?: Prisma.EmpenhoUpdateOneRequiredWithoutVinculosNestedInput
+  revisoes?: Prisma.EmendaEmpenhoRevisaoUpdateManyWithoutVinculoNestedInput
 }
 
 export type EmendaEmpenhoVinculoUncheckedUpdateInput = {
@@ -312,8 +509,22 @@ export type EmendaEmpenhoVinculoUncheckedUpdateInput = {
   emendaId?: Prisma.StringFieldUpdateOperationsInput | string
   empenhoId?: Prisma.StringFieldUpdateOperationsInput | string
   criterio?: Prisma.StringFieldUpdateOperationsInput | string
-  confianca?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  confianca?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   observacao?: Prisma.StringFieldUpdateOperationsInput | string
+  valorAtribuido?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  origem?: Prisma.StringFieldUpdateOperationsInput | string
+  decisao?: Prisma.StringFieldUpdateOperationsInput | string
+  criterios?: Prisma.EmendaEmpenhoVinculoUpdatecriteriosInput | string[]
+  justificativaCurta?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  camposUsados?: Prisma.EmendaEmpenhoVinculoUpdatecamposUsadosInput | string[]
+  modelo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  promptVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inputHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  revisadoEm?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  revisadoPor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  revisoes?: Prisma.EmendaEmpenhoRevisaoUncheckedUpdateManyWithoutVinculoNestedInput
 }
 
 export type EmendaEmpenhoVinculoCreateManyInput = {
@@ -321,15 +532,41 @@ export type EmendaEmpenhoVinculoCreateManyInput = {
   emendaId: string
   empenhoId: string
   criterio: string
-  confianca: runtime.Decimal | runtime.DecimalJsLike | number | string
+  confianca?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   observacao: string
+  valorAtribuido?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  origem?: string
+  decisao?: string
+  criterios?: Prisma.EmendaEmpenhoVinculoCreatecriteriosInput | string[]
+  justificativaCurta?: string | null
+  camposUsados?: Prisma.EmendaEmpenhoVinculoCreatecamposUsadosInput | string[]
+  modelo?: string | null
+  promptVersion?: string | null
+  inputHash?: string | null
+  criadoEm?: Date | string
+  atualizadoEm?: Date | string
+  revisadoEm?: Date | string | null
+  revisadoPor?: string | null
 }
 
 export type EmendaEmpenhoVinculoUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   criterio?: Prisma.StringFieldUpdateOperationsInput | string
-  confianca?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  confianca?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   observacao?: Prisma.StringFieldUpdateOperationsInput | string
+  valorAtribuido?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  origem?: Prisma.StringFieldUpdateOperationsInput | string
+  decisao?: Prisma.StringFieldUpdateOperationsInput | string
+  criterios?: Prisma.EmendaEmpenhoVinculoUpdatecriteriosInput | string[]
+  justificativaCurta?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  camposUsados?: Prisma.EmendaEmpenhoVinculoUpdatecamposUsadosInput | string[]
+  modelo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  promptVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inputHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  revisadoEm?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  revisadoPor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type EmendaEmpenhoVinculoUncheckedUpdateManyInput = {
@@ -337,8 +574,21 @@ export type EmendaEmpenhoVinculoUncheckedUpdateManyInput = {
   emendaId?: Prisma.StringFieldUpdateOperationsInput | string
   empenhoId?: Prisma.StringFieldUpdateOperationsInput | string
   criterio?: Prisma.StringFieldUpdateOperationsInput | string
-  confianca?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  confianca?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   observacao?: Prisma.StringFieldUpdateOperationsInput | string
+  valorAtribuido?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  origem?: Prisma.StringFieldUpdateOperationsInput | string
+  decisao?: Prisma.StringFieldUpdateOperationsInput | string
+  criterios?: Prisma.EmendaEmpenhoVinculoUpdatecriteriosInput | string[]
+  justificativaCurta?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  camposUsados?: Prisma.EmendaEmpenhoVinculoUpdatecamposUsadosInput | string[]
+  modelo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  promptVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inputHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  revisadoEm?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  revisadoPor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type EmendaEmpenhoVinculoListRelationFilter = {
@@ -349,6 +599,14 @@ export type EmendaEmpenhoVinculoListRelationFilter = {
 
 export type EmendaEmpenhoVinculoOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type StringNullableListFilter<$PrismaModel = never> = {
+  equals?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel> | null
+  has?: string | Prisma.StringFieldRefInput<$PrismaModel> | null
+  hasEvery?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
+  hasSome?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
+  isEmpty?: boolean
 }
 
 export type EmendaEmpenhoVinculoEmendaIdEmpenhoIdCompoundUniqueInput = {
@@ -363,10 +621,24 @@ export type EmendaEmpenhoVinculoCountOrderByAggregateInput = {
   criterio?: Prisma.SortOrder
   confianca?: Prisma.SortOrder
   observacao?: Prisma.SortOrder
+  valorAtribuido?: Prisma.SortOrder
+  origem?: Prisma.SortOrder
+  decisao?: Prisma.SortOrder
+  criterios?: Prisma.SortOrder
+  justificativaCurta?: Prisma.SortOrder
+  camposUsados?: Prisma.SortOrder
+  modelo?: Prisma.SortOrder
+  promptVersion?: Prisma.SortOrder
+  inputHash?: Prisma.SortOrder
+  criadoEm?: Prisma.SortOrder
+  atualizadoEm?: Prisma.SortOrder
+  revisadoEm?: Prisma.SortOrder
+  revisadoPor?: Prisma.SortOrder
 }
 
 export type EmendaEmpenhoVinculoAvgOrderByAggregateInput = {
   confianca?: Prisma.SortOrder
+  valorAtribuido?: Prisma.SortOrder
 }
 
 export type EmendaEmpenhoVinculoMaxOrderByAggregateInput = {
@@ -376,6 +648,17 @@ export type EmendaEmpenhoVinculoMaxOrderByAggregateInput = {
   criterio?: Prisma.SortOrder
   confianca?: Prisma.SortOrder
   observacao?: Prisma.SortOrder
+  valorAtribuido?: Prisma.SortOrder
+  origem?: Prisma.SortOrder
+  decisao?: Prisma.SortOrder
+  justificativaCurta?: Prisma.SortOrder
+  modelo?: Prisma.SortOrder
+  promptVersion?: Prisma.SortOrder
+  inputHash?: Prisma.SortOrder
+  criadoEm?: Prisma.SortOrder
+  atualizadoEm?: Prisma.SortOrder
+  revisadoEm?: Prisma.SortOrder
+  revisadoPor?: Prisma.SortOrder
 }
 
 export type EmendaEmpenhoVinculoMinOrderByAggregateInput = {
@@ -385,10 +668,27 @@ export type EmendaEmpenhoVinculoMinOrderByAggregateInput = {
   criterio?: Prisma.SortOrder
   confianca?: Prisma.SortOrder
   observacao?: Prisma.SortOrder
+  valorAtribuido?: Prisma.SortOrder
+  origem?: Prisma.SortOrder
+  decisao?: Prisma.SortOrder
+  justificativaCurta?: Prisma.SortOrder
+  modelo?: Prisma.SortOrder
+  promptVersion?: Prisma.SortOrder
+  inputHash?: Prisma.SortOrder
+  criadoEm?: Prisma.SortOrder
+  atualizadoEm?: Prisma.SortOrder
+  revisadoEm?: Prisma.SortOrder
+  revisadoPor?: Prisma.SortOrder
 }
 
 export type EmendaEmpenhoVinculoSumOrderByAggregateInput = {
   confianca?: Prisma.SortOrder
+  valorAtribuido?: Prisma.SortOrder
+}
+
+export type EmendaEmpenhoVinculoScalarRelationFilter = {
+  is?: Prisma.EmendaEmpenhoVinculoWhereInput
+  isNot?: Prisma.EmendaEmpenhoVinculoWhereInput
 }
 
 export type EmendaEmpenhoVinculoCreateNestedManyWithoutEmendaInput = {
@@ -475,20 +775,92 @@ export type EmendaEmpenhoVinculoUncheckedUpdateManyWithoutEmpenhoNestedInput = {
   deleteMany?: Prisma.EmendaEmpenhoVinculoScalarWhereInput | Prisma.EmendaEmpenhoVinculoScalarWhereInput[]
 }
 
+export type EmendaEmpenhoVinculoCreatecriteriosInput = {
+  set: string[]
+}
+
+export type EmendaEmpenhoVinculoCreatecamposUsadosInput = {
+  set: string[]
+}
+
+export type NullableDecimalFieldUpdateOperationsInput = {
+  set?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  increment?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  decrement?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  multiply?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  divide?: runtime.Decimal | runtime.DecimalJsLike | number | string
+}
+
+export type EmendaEmpenhoVinculoUpdatecriteriosInput = {
+  set?: string[]
+  push?: string | string[]
+}
+
+export type EmendaEmpenhoVinculoUpdatecamposUsadosInput = {
+  set?: string[]
+  push?: string | string[]
+}
+
+export type DateTimeFieldUpdateOperationsInput = {
+  set?: Date | string
+}
+
+export type EmendaEmpenhoVinculoCreateNestedOneWithoutRevisoesInput = {
+  create?: Prisma.XOR<Prisma.EmendaEmpenhoVinculoCreateWithoutRevisoesInput, Prisma.EmendaEmpenhoVinculoUncheckedCreateWithoutRevisoesInput>
+  connectOrCreate?: Prisma.EmendaEmpenhoVinculoCreateOrConnectWithoutRevisoesInput
+  connect?: Prisma.EmendaEmpenhoVinculoWhereUniqueInput
+}
+
+export type EmendaEmpenhoVinculoUpdateOneRequiredWithoutRevisoesNestedInput = {
+  create?: Prisma.XOR<Prisma.EmendaEmpenhoVinculoCreateWithoutRevisoesInput, Prisma.EmendaEmpenhoVinculoUncheckedCreateWithoutRevisoesInput>
+  connectOrCreate?: Prisma.EmendaEmpenhoVinculoCreateOrConnectWithoutRevisoesInput
+  upsert?: Prisma.EmendaEmpenhoVinculoUpsertWithoutRevisoesInput
+  connect?: Prisma.EmendaEmpenhoVinculoWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.EmendaEmpenhoVinculoUpdateToOneWithWhereWithoutRevisoesInput, Prisma.EmendaEmpenhoVinculoUpdateWithoutRevisoesInput>, Prisma.EmendaEmpenhoVinculoUncheckedUpdateWithoutRevisoesInput>
+}
+
 export type EmendaEmpenhoVinculoCreateWithoutEmendaInput = {
   id?: string
   criterio: string
-  confianca: runtime.Decimal | runtime.DecimalJsLike | number | string
+  confianca?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   observacao: string
+  valorAtribuido?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  origem?: string
+  decisao?: string
+  criterios?: Prisma.EmendaEmpenhoVinculoCreatecriteriosInput | string[]
+  justificativaCurta?: string | null
+  camposUsados?: Prisma.EmendaEmpenhoVinculoCreatecamposUsadosInput | string[]
+  modelo?: string | null
+  promptVersion?: string | null
+  inputHash?: string | null
+  criadoEm?: Date | string
+  atualizadoEm?: Date | string
+  revisadoEm?: Date | string | null
+  revisadoPor?: string | null
   empenho: Prisma.EmpenhoCreateNestedOneWithoutVinculosInput
+  revisoes?: Prisma.EmendaEmpenhoRevisaoCreateNestedManyWithoutVinculoInput
 }
 
 export type EmendaEmpenhoVinculoUncheckedCreateWithoutEmendaInput = {
   id?: string
   empenhoId: string
   criterio: string
-  confianca: runtime.Decimal | runtime.DecimalJsLike | number | string
+  confianca?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   observacao: string
+  valorAtribuido?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  origem?: string
+  decisao?: string
+  criterios?: Prisma.EmendaEmpenhoVinculoCreatecriteriosInput | string[]
+  justificativaCurta?: string | null
+  camposUsados?: Prisma.EmendaEmpenhoVinculoCreatecamposUsadosInput | string[]
+  modelo?: string | null
+  promptVersion?: string | null
+  inputHash?: string | null
+  criadoEm?: Date | string
+  atualizadoEm?: Date | string
+  revisadoEm?: Date | string | null
+  revisadoPor?: string | null
+  revisoes?: Prisma.EmendaEmpenhoRevisaoUncheckedCreateNestedManyWithoutVinculoInput
 }
 
 export type EmendaEmpenhoVinculoCreateOrConnectWithoutEmendaInput = {
@@ -525,24 +897,65 @@ export type EmendaEmpenhoVinculoScalarWhereInput = {
   emendaId?: Prisma.StringFilter<"EmendaEmpenhoVinculo"> | string
   empenhoId?: Prisma.StringFilter<"EmendaEmpenhoVinculo"> | string
   criterio?: Prisma.StringFilter<"EmendaEmpenhoVinculo"> | string
-  confianca?: Prisma.DecimalFilter<"EmendaEmpenhoVinculo"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  confianca?: Prisma.DecimalNullableFilter<"EmendaEmpenhoVinculo"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   observacao?: Prisma.StringFilter<"EmendaEmpenhoVinculo"> | string
+  valorAtribuido?: Prisma.DecimalNullableFilter<"EmendaEmpenhoVinculo"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  origem?: Prisma.StringFilter<"EmendaEmpenhoVinculo"> | string
+  decisao?: Prisma.StringFilter<"EmendaEmpenhoVinculo"> | string
+  criterios?: Prisma.StringNullableListFilter<"EmendaEmpenhoVinculo">
+  justificativaCurta?: Prisma.StringNullableFilter<"EmendaEmpenhoVinculo"> | string | null
+  camposUsados?: Prisma.StringNullableListFilter<"EmendaEmpenhoVinculo">
+  modelo?: Prisma.StringNullableFilter<"EmendaEmpenhoVinculo"> | string | null
+  promptVersion?: Prisma.StringNullableFilter<"EmendaEmpenhoVinculo"> | string | null
+  inputHash?: Prisma.StringNullableFilter<"EmendaEmpenhoVinculo"> | string | null
+  criadoEm?: Prisma.DateTimeFilter<"EmendaEmpenhoVinculo"> | Date | string
+  atualizadoEm?: Prisma.DateTimeFilter<"EmendaEmpenhoVinculo"> | Date | string
+  revisadoEm?: Prisma.DateTimeNullableFilter<"EmendaEmpenhoVinculo"> | Date | string | null
+  revisadoPor?: Prisma.StringNullableFilter<"EmendaEmpenhoVinculo"> | string | null
 }
 
 export type EmendaEmpenhoVinculoCreateWithoutEmpenhoInput = {
   id?: string
   criterio: string
-  confianca: runtime.Decimal | runtime.DecimalJsLike | number | string
+  confianca?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   observacao: string
+  valorAtribuido?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  origem?: string
+  decisao?: string
+  criterios?: Prisma.EmendaEmpenhoVinculoCreatecriteriosInput | string[]
+  justificativaCurta?: string | null
+  camposUsados?: Prisma.EmendaEmpenhoVinculoCreatecamposUsadosInput | string[]
+  modelo?: string | null
+  promptVersion?: string | null
+  inputHash?: string | null
+  criadoEm?: Date | string
+  atualizadoEm?: Date | string
+  revisadoEm?: Date | string | null
+  revisadoPor?: string | null
   emenda: Prisma.EmendaCreateNestedOneWithoutVinculosInput
+  revisoes?: Prisma.EmendaEmpenhoRevisaoCreateNestedManyWithoutVinculoInput
 }
 
 export type EmendaEmpenhoVinculoUncheckedCreateWithoutEmpenhoInput = {
   id?: string
   emendaId: string
   criterio: string
-  confianca: runtime.Decimal | runtime.DecimalJsLike | number | string
+  confianca?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   observacao: string
+  valorAtribuido?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  origem?: string
+  decisao?: string
+  criterios?: Prisma.EmendaEmpenhoVinculoCreatecriteriosInput | string[]
+  justificativaCurta?: string | null
+  camposUsados?: Prisma.EmendaEmpenhoVinculoCreatecamposUsadosInput | string[]
+  modelo?: string | null
+  promptVersion?: string | null
+  inputHash?: string | null
+  criadoEm?: Date | string
+  atualizadoEm?: Date | string
+  revisadoEm?: Date | string | null
+  revisadoPor?: string | null
+  revisoes?: Prisma.EmendaEmpenhoRevisaoUncheckedCreateNestedManyWithoutVinculoInput
 }
 
 export type EmendaEmpenhoVinculoCreateOrConnectWithoutEmpenhoInput = {
@@ -571,70 +984,311 @@ export type EmendaEmpenhoVinculoUpdateManyWithWhereWithoutEmpenhoInput = {
   data: Prisma.XOR<Prisma.EmendaEmpenhoVinculoUpdateManyMutationInput, Prisma.EmendaEmpenhoVinculoUncheckedUpdateManyWithoutEmpenhoInput>
 }
 
+export type EmendaEmpenhoVinculoCreateWithoutRevisoesInput = {
+  id?: string
+  criterio: string
+  confianca?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  observacao: string
+  valorAtribuido?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  origem?: string
+  decisao?: string
+  criterios?: Prisma.EmendaEmpenhoVinculoCreatecriteriosInput | string[]
+  justificativaCurta?: string | null
+  camposUsados?: Prisma.EmendaEmpenhoVinculoCreatecamposUsadosInput | string[]
+  modelo?: string | null
+  promptVersion?: string | null
+  inputHash?: string | null
+  criadoEm?: Date | string
+  atualizadoEm?: Date | string
+  revisadoEm?: Date | string | null
+  revisadoPor?: string | null
+  emenda: Prisma.EmendaCreateNestedOneWithoutVinculosInput
+  empenho: Prisma.EmpenhoCreateNestedOneWithoutVinculosInput
+}
+
+export type EmendaEmpenhoVinculoUncheckedCreateWithoutRevisoesInput = {
+  id?: string
+  emendaId: string
+  empenhoId: string
+  criterio: string
+  confianca?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  observacao: string
+  valorAtribuido?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  origem?: string
+  decisao?: string
+  criterios?: Prisma.EmendaEmpenhoVinculoCreatecriteriosInput | string[]
+  justificativaCurta?: string | null
+  camposUsados?: Prisma.EmendaEmpenhoVinculoCreatecamposUsadosInput | string[]
+  modelo?: string | null
+  promptVersion?: string | null
+  inputHash?: string | null
+  criadoEm?: Date | string
+  atualizadoEm?: Date | string
+  revisadoEm?: Date | string | null
+  revisadoPor?: string | null
+}
+
+export type EmendaEmpenhoVinculoCreateOrConnectWithoutRevisoesInput = {
+  where: Prisma.EmendaEmpenhoVinculoWhereUniqueInput
+  create: Prisma.XOR<Prisma.EmendaEmpenhoVinculoCreateWithoutRevisoesInput, Prisma.EmendaEmpenhoVinculoUncheckedCreateWithoutRevisoesInput>
+}
+
+export type EmendaEmpenhoVinculoUpsertWithoutRevisoesInput = {
+  update: Prisma.XOR<Prisma.EmendaEmpenhoVinculoUpdateWithoutRevisoesInput, Prisma.EmendaEmpenhoVinculoUncheckedUpdateWithoutRevisoesInput>
+  create: Prisma.XOR<Prisma.EmendaEmpenhoVinculoCreateWithoutRevisoesInput, Prisma.EmendaEmpenhoVinculoUncheckedCreateWithoutRevisoesInput>
+  where?: Prisma.EmendaEmpenhoVinculoWhereInput
+}
+
+export type EmendaEmpenhoVinculoUpdateToOneWithWhereWithoutRevisoesInput = {
+  where?: Prisma.EmendaEmpenhoVinculoWhereInput
+  data: Prisma.XOR<Prisma.EmendaEmpenhoVinculoUpdateWithoutRevisoesInput, Prisma.EmendaEmpenhoVinculoUncheckedUpdateWithoutRevisoesInput>
+}
+
+export type EmendaEmpenhoVinculoUpdateWithoutRevisoesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  criterio?: Prisma.StringFieldUpdateOperationsInput | string
+  confianca?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  observacao?: Prisma.StringFieldUpdateOperationsInput | string
+  valorAtribuido?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  origem?: Prisma.StringFieldUpdateOperationsInput | string
+  decisao?: Prisma.StringFieldUpdateOperationsInput | string
+  criterios?: Prisma.EmendaEmpenhoVinculoUpdatecriteriosInput | string[]
+  justificativaCurta?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  camposUsados?: Prisma.EmendaEmpenhoVinculoUpdatecamposUsadosInput | string[]
+  modelo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  promptVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inputHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  revisadoEm?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  revisadoPor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emenda?: Prisma.EmendaUpdateOneRequiredWithoutVinculosNestedInput
+  empenho?: Prisma.EmpenhoUpdateOneRequiredWithoutVinculosNestedInput
+}
+
+export type EmendaEmpenhoVinculoUncheckedUpdateWithoutRevisoesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  emendaId?: Prisma.StringFieldUpdateOperationsInput | string
+  empenhoId?: Prisma.StringFieldUpdateOperationsInput | string
+  criterio?: Prisma.StringFieldUpdateOperationsInput | string
+  confianca?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  observacao?: Prisma.StringFieldUpdateOperationsInput | string
+  valorAtribuido?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  origem?: Prisma.StringFieldUpdateOperationsInput | string
+  decisao?: Prisma.StringFieldUpdateOperationsInput | string
+  criterios?: Prisma.EmendaEmpenhoVinculoUpdatecriteriosInput | string[]
+  justificativaCurta?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  camposUsados?: Prisma.EmendaEmpenhoVinculoUpdatecamposUsadosInput | string[]
+  modelo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  promptVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inputHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  revisadoEm?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  revisadoPor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+}
+
 export type EmendaEmpenhoVinculoCreateManyEmendaInput = {
   id?: string
   empenhoId: string
   criterio: string
-  confianca: runtime.Decimal | runtime.DecimalJsLike | number | string
+  confianca?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   observacao: string
+  valorAtribuido?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  origem?: string
+  decisao?: string
+  criterios?: Prisma.EmendaEmpenhoVinculoCreatecriteriosInput | string[]
+  justificativaCurta?: string | null
+  camposUsados?: Prisma.EmendaEmpenhoVinculoCreatecamposUsadosInput | string[]
+  modelo?: string | null
+  promptVersion?: string | null
+  inputHash?: string | null
+  criadoEm?: Date | string
+  atualizadoEm?: Date | string
+  revisadoEm?: Date | string | null
+  revisadoPor?: string | null
 }
 
 export type EmendaEmpenhoVinculoUpdateWithoutEmendaInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   criterio?: Prisma.StringFieldUpdateOperationsInput | string
-  confianca?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  confianca?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   observacao?: Prisma.StringFieldUpdateOperationsInput | string
+  valorAtribuido?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  origem?: Prisma.StringFieldUpdateOperationsInput | string
+  decisao?: Prisma.StringFieldUpdateOperationsInput | string
+  criterios?: Prisma.EmendaEmpenhoVinculoUpdatecriteriosInput | string[]
+  justificativaCurta?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  camposUsados?: Prisma.EmendaEmpenhoVinculoUpdatecamposUsadosInput | string[]
+  modelo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  promptVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inputHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  revisadoEm?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  revisadoPor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   empenho?: Prisma.EmpenhoUpdateOneRequiredWithoutVinculosNestedInput
+  revisoes?: Prisma.EmendaEmpenhoRevisaoUpdateManyWithoutVinculoNestedInput
 }
 
 export type EmendaEmpenhoVinculoUncheckedUpdateWithoutEmendaInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   empenhoId?: Prisma.StringFieldUpdateOperationsInput | string
   criterio?: Prisma.StringFieldUpdateOperationsInput | string
-  confianca?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  confianca?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   observacao?: Prisma.StringFieldUpdateOperationsInput | string
+  valorAtribuido?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  origem?: Prisma.StringFieldUpdateOperationsInput | string
+  decisao?: Prisma.StringFieldUpdateOperationsInput | string
+  criterios?: Prisma.EmendaEmpenhoVinculoUpdatecriteriosInput | string[]
+  justificativaCurta?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  camposUsados?: Prisma.EmendaEmpenhoVinculoUpdatecamposUsadosInput | string[]
+  modelo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  promptVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inputHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  revisadoEm?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  revisadoPor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  revisoes?: Prisma.EmendaEmpenhoRevisaoUncheckedUpdateManyWithoutVinculoNestedInput
 }
 
 export type EmendaEmpenhoVinculoUncheckedUpdateManyWithoutEmendaInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   empenhoId?: Prisma.StringFieldUpdateOperationsInput | string
   criterio?: Prisma.StringFieldUpdateOperationsInput | string
-  confianca?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  confianca?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   observacao?: Prisma.StringFieldUpdateOperationsInput | string
+  valorAtribuido?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  origem?: Prisma.StringFieldUpdateOperationsInput | string
+  decisao?: Prisma.StringFieldUpdateOperationsInput | string
+  criterios?: Prisma.EmendaEmpenhoVinculoUpdatecriteriosInput | string[]
+  justificativaCurta?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  camposUsados?: Prisma.EmendaEmpenhoVinculoUpdatecamposUsadosInput | string[]
+  modelo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  promptVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inputHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  revisadoEm?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  revisadoPor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type EmendaEmpenhoVinculoCreateManyEmpenhoInput = {
   id?: string
   emendaId: string
   criterio: string
-  confianca: runtime.Decimal | runtime.DecimalJsLike | number | string
+  confianca?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   observacao: string
+  valorAtribuido?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  origem?: string
+  decisao?: string
+  criterios?: Prisma.EmendaEmpenhoVinculoCreatecriteriosInput | string[]
+  justificativaCurta?: string | null
+  camposUsados?: Prisma.EmendaEmpenhoVinculoCreatecamposUsadosInput | string[]
+  modelo?: string | null
+  promptVersion?: string | null
+  inputHash?: string | null
+  criadoEm?: Date | string
+  atualizadoEm?: Date | string
+  revisadoEm?: Date | string | null
+  revisadoPor?: string | null
 }
 
 export type EmendaEmpenhoVinculoUpdateWithoutEmpenhoInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   criterio?: Prisma.StringFieldUpdateOperationsInput | string
-  confianca?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  confianca?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   observacao?: Prisma.StringFieldUpdateOperationsInput | string
+  valorAtribuido?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  origem?: Prisma.StringFieldUpdateOperationsInput | string
+  decisao?: Prisma.StringFieldUpdateOperationsInput | string
+  criterios?: Prisma.EmendaEmpenhoVinculoUpdatecriteriosInput | string[]
+  justificativaCurta?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  camposUsados?: Prisma.EmendaEmpenhoVinculoUpdatecamposUsadosInput | string[]
+  modelo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  promptVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inputHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  revisadoEm?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  revisadoPor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   emenda?: Prisma.EmendaUpdateOneRequiredWithoutVinculosNestedInput
+  revisoes?: Prisma.EmendaEmpenhoRevisaoUpdateManyWithoutVinculoNestedInput
 }
 
 export type EmendaEmpenhoVinculoUncheckedUpdateWithoutEmpenhoInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   emendaId?: Prisma.StringFieldUpdateOperationsInput | string
   criterio?: Prisma.StringFieldUpdateOperationsInput | string
-  confianca?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  confianca?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   observacao?: Prisma.StringFieldUpdateOperationsInput | string
+  valorAtribuido?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  origem?: Prisma.StringFieldUpdateOperationsInput | string
+  decisao?: Prisma.StringFieldUpdateOperationsInput | string
+  criterios?: Prisma.EmendaEmpenhoVinculoUpdatecriteriosInput | string[]
+  justificativaCurta?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  camposUsados?: Prisma.EmendaEmpenhoVinculoUpdatecamposUsadosInput | string[]
+  modelo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  promptVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inputHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  revisadoEm?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  revisadoPor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  revisoes?: Prisma.EmendaEmpenhoRevisaoUncheckedUpdateManyWithoutVinculoNestedInput
 }
 
 export type EmendaEmpenhoVinculoUncheckedUpdateManyWithoutEmpenhoInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   emendaId?: Prisma.StringFieldUpdateOperationsInput | string
   criterio?: Prisma.StringFieldUpdateOperationsInput | string
-  confianca?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  confianca?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   observacao?: Prisma.StringFieldUpdateOperationsInput | string
+  valorAtribuido?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  origem?: Prisma.StringFieldUpdateOperationsInput | string
+  decisao?: Prisma.StringFieldUpdateOperationsInput | string
+  criterios?: Prisma.EmendaEmpenhoVinculoUpdatecriteriosInput | string[]
+  justificativaCurta?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  camposUsados?: Prisma.EmendaEmpenhoVinculoUpdatecamposUsadosInput | string[]
+  modelo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  promptVersion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inputHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  revisadoEm?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  revisadoPor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
+
+/**
+ * Count Type EmendaEmpenhoVinculoCountOutputType
+ */
+
+export type EmendaEmpenhoVinculoCountOutputType = {
+  revisoes: number
+}
+
+export type EmendaEmpenhoVinculoCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  revisoes?: boolean | EmendaEmpenhoVinculoCountOutputTypeCountRevisoesArgs
+}
+
+/**
+ * EmendaEmpenhoVinculoCountOutputType without action
+ */
+export type EmendaEmpenhoVinculoCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the EmendaEmpenhoVinculoCountOutputType
+   */
+  select?: Prisma.EmendaEmpenhoVinculoCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * EmendaEmpenhoVinculoCountOutputType without action
+ */
+export type EmendaEmpenhoVinculoCountOutputTypeCountRevisoesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.EmendaEmpenhoRevisaoWhereInput
+}
 
 
 export type EmendaEmpenhoVinculoSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -644,8 +1298,23 @@ export type EmendaEmpenhoVinculoSelect<ExtArgs extends runtime.Types.Extensions.
   criterio?: boolean
   confianca?: boolean
   observacao?: boolean
+  valorAtribuido?: boolean
+  origem?: boolean
+  decisao?: boolean
+  criterios?: boolean
+  justificativaCurta?: boolean
+  camposUsados?: boolean
+  modelo?: boolean
+  promptVersion?: boolean
+  inputHash?: boolean
+  criadoEm?: boolean
+  atualizadoEm?: boolean
+  revisadoEm?: boolean
+  revisadoPor?: boolean
   emenda?: boolean | Prisma.EmendaDefaultArgs<ExtArgs>
   empenho?: boolean | Prisma.EmpenhoDefaultArgs<ExtArgs>
+  revisoes?: boolean | Prisma.EmendaEmpenhoVinculo$revisoesArgs<ExtArgs>
+  _count?: boolean | Prisma.EmendaEmpenhoVinculoCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["emendaEmpenhoVinculo"]>
 
 export type EmendaEmpenhoVinculoSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -655,6 +1324,19 @@ export type EmendaEmpenhoVinculoSelectCreateManyAndReturn<ExtArgs extends runtim
   criterio?: boolean
   confianca?: boolean
   observacao?: boolean
+  valorAtribuido?: boolean
+  origem?: boolean
+  decisao?: boolean
+  criterios?: boolean
+  justificativaCurta?: boolean
+  camposUsados?: boolean
+  modelo?: boolean
+  promptVersion?: boolean
+  inputHash?: boolean
+  criadoEm?: boolean
+  atualizadoEm?: boolean
+  revisadoEm?: boolean
+  revisadoPor?: boolean
   emenda?: boolean | Prisma.EmendaDefaultArgs<ExtArgs>
   empenho?: boolean | Prisma.EmpenhoDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["emendaEmpenhoVinculo"]>
@@ -666,6 +1348,19 @@ export type EmendaEmpenhoVinculoSelectUpdateManyAndReturn<ExtArgs extends runtim
   criterio?: boolean
   confianca?: boolean
   observacao?: boolean
+  valorAtribuido?: boolean
+  origem?: boolean
+  decisao?: boolean
+  criterios?: boolean
+  justificativaCurta?: boolean
+  camposUsados?: boolean
+  modelo?: boolean
+  promptVersion?: boolean
+  inputHash?: boolean
+  criadoEm?: boolean
+  atualizadoEm?: boolean
+  revisadoEm?: boolean
+  revisadoPor?: boolean
   emenda?: boolean | Prisma.EmendaDefaultArgs<ExtArgs>
   empenho?: boolean | Prisma.EmpenhoDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["emendaEmpenhoVinculo"]>
@@ -677,12 +1372,27 @@ export type EmendaEmpenhoVinculoSelectScalar = {
   criterio?: boolean
   confianca?: boolean
   observacao?: boolean
+  valorAtribuido?: boolean
+  origem?: boolean
+  decisao?: boolean
+  criterios?: boolean
+  justificativaCurta?: boolean
+  camposUsados?: boolean
+  modelo?: boolean
+  promptVersion?: boolean
+  inputHash?: boolean
+  criadoEm?: boolean
+  atualizadoEm?: boolean
+  revisadoEm?: boolean
+  revisadoPor?: boolean
 }
 
-export type EmendaEmpenhoVinculoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "emendaId" | "empenhoId" | "criterio" | "confianca" | "observacao", ExtArgs["result"]["emendaEmpenhoVinculo"]>
+export type EmendaEmpenhoVinculoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "emendaId" | "empenhoId" | "criterio" | "confianca" | "observacao" | "valorAtribuido" | "origem" | "decisao" | "criterios" | "justificativaCurta" | "camposUsados" | "modelo" | "promptVersion" | "inputHash" | "criadoEm" | "atualizadoEm" | "revisadoEm" | "revisadoPor", ExtArgs["result"]["emendaEmpenhoVinculo"]>
 export type EmendaEmpenhoVinculoInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   emenda?: boolean | Prisma.EmendaDefaultArgs<ExtArgs>
   empenho?: boolean | Prisma.EmpenhoDefaultArgs<ExtArgs>
+  revisoes?: boolean | Prisma.EmendaEmpenhoVinculo$revisoesArgs<ExtArgs>
+  _count?: boolean | Prisma.EmendaEmpenhoVinculoCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type EmendaEmpenhoVinculoIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   emenda?: boolean | Prisma.EmendaDefaultArgs<ExtArgs>
@@ -698,14 +1408,28 @@ export type $EmendaEmpenhoVinculoPayload<ExtArgs extends runtime.Types.Extension
   objects: {
     emenda: Prisma.$EmendaPayload<ExtArgs>
     empenho: Prisma.$EmpenhoPayload<ExtArgs>
+    revisoes: Prisma.$EmendaEmpenhoRevisaoPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     emendaId: string
     empenhoId: string
     criterio: string
-    confianca: runtime.Decimal
+    confianca: runtime.Decimal | null
     observacao: string
+    valorAtribuido: runtime.Decimal | null
+    origem: string
+    decisao: string
+    criterios: string[]
+    justificativaCurta: string | null
+    camposUsados: string[]
+    modelo: string | null
+    promptVersion: string | null
+    inputHash: string | null
+    criadoEm: Date
+    atualizadoEm: Date
+    revisadoEm: Date | null
+    revisadoPor: string | null
   }, ExtArgs["result"]["emendaEmpenhoVinculo"]>
   composites: {}
 }
@@ -1102,6 +1826,7 @@ export interface Prisma__EmendaEmpenhoVinculoClient<T, Null = never, ExtArgs ext
   readonly [Symbol.toStringTag]: "PrismaPromise"
   emenda<T extends Prisma.EmendaDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EmendaDefaultArgs<ExtArgs>>): Prisma.Prisma__EmendaClient<runtime.Types.Result.GetResult<Prisma.$EmendaPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   empenho<T extends Prisma.EmpenhoDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EmpenhoDefaultArgs<ExtArgs>>): Prisma.Prisma__EmpenhoClient<runtime.Types.Result.GetResult<Prisma.$EmpenhoPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  revisoes<T extends Prisma.EmendaEmpenhoVinculo$revisoesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EmendaEmpenhoVinculo$revisoesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EmendaEmpenhoRevisaoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1137,6 +1862,19 @@ export interface EmendaEmpenhoVinculoFieldRefs {
   readonly criterio: Prisma.FieldRef<"EmendaEmpenhoVinculo", 'String'>
   readonly confianca: Prisma.FieldRef<"EmendaEmpenhoVinculo", 'Decimal'>
   readonly observacao: Prisma.FieldRef<"EmendaEmpenhoVinculo", 'String'>
+  readonly valorAtribuido: Prisma.FieldRef<"EmendaEmpenhoVinculo", 'Decimal'>
+  readonly origem: Prisma.FieldRef<"EmendaEmpenhoVinculo", 'String'>
+  readonly decisao: Prisma.FieldRef<"EmendaEmpenhoVinculo", 'String'>
+  readonly criterios: Prisma.FieldRef<"EmendaEmpenhoVinculo", 'String[]'>
+  readonly justificativaCurta: Prisma.FieldRef<"EmendaEmpenhoVinculo", 'String'>
+  readonly camposUsados: Prisma.FieldRef<"EmendaEmpenhoVinculo", 'String[]'>
+  readonly modelo: Prisma.FieldRef<"EmendaEmpenhoVinculo", 'String'>
+  readonly promptVersion: Prisma.FieldRef<"EmendaEmpenhoVinculo", 'String'>
+  readonly inputHash: Prisma.FieldRef<"EmendaEmpenhoVinculo", 'String'>
+  readonly criadoEm: Prisma.FieldRef<"EmendaEmpenhoVinculo", 'DateTime'>
+  readonly atualizadoEm: Prisma.FieldRef<"EmendaEmpenhoVinculo", 'DateTime'>
+  readonly revisadoEm: Prisma.FieldRef<"EmendaEmpenhoVinculo", 'DateTime'>
+  readonly revisadoPor: Prisma.FieldRef<"EmendaEmpenhoVinculo", 'String'>
 }
     
 
@@ -1535,6 +2273,30 @@ export type EmendaEmpenhoVinculoDeleteManyArgs<ExtArgs extends runtime.Types.Ext
    * Limit how many EmendaEmpenhoVinculos to delete.
    */
   limit?: number
+}
+
+/**
+ * EmendaEmpenhoVinculo.revisoes
+ */
+export type EmendaEmpenhoVinculo$revisoesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the EmendaEmpenhoRevisao
+   */
+  select?: Prisma.EmendaEmpenhoRevisaoSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the EmendaEmpenhoRevisao
+   */
+  omit?: Prisma.EmendaEmpenhoRevisaoOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.EmendaEmpenhoRevisaoInclude<ExtArgs> | null
+  where?: Prisma.EmendaEmpenhoRevisaoWhereInput
+  orderBy?: Prisma.EmendaEmpenhoRevisaoOrderByWithRelationInput | Prisma.EmendaEmpenhoRevisaoOrderByWithRelationInput[]
+  cursor?: Prisma.EmendaEmpenhoRevisaoWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.EmendaEmpenhoRevisaoScalarFieldEnum | Prisma.EmendaEmpenhoRevisaoScalarFieldEnum[]
 }
 
 /**

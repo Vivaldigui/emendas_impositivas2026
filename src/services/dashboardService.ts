@@ -1,4 +1,9 @@
 import { emendas, fontesDocumentos, vereadores } from "@/data/emendas";
+import {
+  getOpenAiEmpenhoModel,
+  isOpenAiEmpenhoEnabled,
+  loadPersistedLinkState,
+} from "@/services/aiEmpenhoLinker";
 import { gerarVinculosEmendasEmpenhos } from "@/services/emendaMatcher";
 import {
   listStoredEmpenhosArtifacts,
@@ -43,6 +48,11 @@ export async function getDashboardData() {
     ultimaColeta: artifacts[0] ?? null,
     logs,
     alertas: buildAlertas(emendasResumo, artifacts.length),
+    ia: {
+      enabled: process.env.OPENAI_EMPENHO_ENABLED !== "false",
+      available: isOpenAiEmpenhoEnabled(),
+      model: getOpenAiEmpenhoModel(),
+    },
   };
 }
 
@@ -52,8 +62,10 @@ export async function getVereadoresResumo() {
 
 export async function getEmendasResumo(filters: EmendasFilters = {}) {
   const empenhos = await loadAllEmpenhos();
-  const vinculos = gerarVinculosEmendasEmpenhos(empenhos);
-  const empenhosById = new Map(empenhos.map((empenho) => [empenho.id, empenho]));
+  const persisted = await safeLoadPersistedState();
+  const allEmpenhos = mergeEmpenhos(empenhos, persisted.empenhos);
+  const vinculos = gerarVinculosEmendasEmpenhos(allEmpenhos);
+  const empenhosById = new Map(allEmpenhos.map((empenho) => [empenho.id, empenho]));
   const vereadoresById = new Map(vereadores.map((vereador) => [vereador.id, vereador]));
   const vinculosByEmenda = new Map<string, EmendaResumo["vinculos"]>();
 
@@ -68,16 +80,29 @@ export async function getEmendasResumo(filters: EmendasFilters = {}) {
     vinculosByEmenda.set(vinculo.emendaId, list);
   }
 
+  for (const [emendaId, persistedVinculos] of persisted.vinculosByEmenda) {
+    const current = vinculosByEmenda.get(emendaId) ?? [];
+    const merged = new Map(current.map((vinculo) => [vinculoKey(vinculo), vinculo]));
+
+    for (const vinculo of persistedVinculos) {
+      merged.set(vinculoKey(vinculo), vinculo);
+    }
+
+    vinculosByEmenda.set(emendaId, Array.from(merged.values()));
+  }
+
   const resumo = emendas.map((emenda) => {
     const vereador = vereadoresById.get(emenda.vereadorId);
     if (!vereador) {
       throw new Error(`Vereador nao localizado para emenda ${emenda.id}.`);
     }
 
-    const emendaVinculos = vinculosByEmenda.get(emenda.id) ?? [];
-    const valorEmpenhado = sum(emendaVinculos, (item) => item.empenho.valorEmpenhado);
-    const valorLiquidado = sum(emendaVinculos, (item) => item.empenho.valorLiquidado);
-    const valorPago = sum(emendaVinculos, (item) => item.empenho.valorPago);
+    const emendaVinculos = (vinculosByEmenda.get(emenda.id) ?? []).filter(
+      (vinculo) => vinculo.decisao !== "REJEITADO",
+    );
+    const valorEmpenhado = sum(emendaVinculos, (item) => attributedValue(item, "valorEmpenhado"));
+    const valorLiquidado = sum(emendaVinculos, (item) => attributedValue(item, "valorLiquidado"));
+    const valorPago = sum(emendaVinculos, (item) => attributedValue(item, "valorPago"));
     const saldo = Math.max(0, emenda.valorAutorizado - valorEmpenhado);
     const percentualExecucao = emenda.valorAutorizado
       ? clampPercent((valorEmpenhado / emenda.valorAutorizado) * 100)
@@ -92,7 +117,10 @@ export async function getEmendasResumo(filters: EmendasFilters = {}) {
       saldo,
       percentualExecucao,
       situacao: determineSituacao(emenda.valorAutorizado, emendaVinculos),
-      vinculos: emendaVinculos.sort((left, right) => right.confianca - left.confianca),
+      vinculos: emendaVinculos.sort(
+        (left, right) => (right.confianca ?? 0) - (left.confianca ?? 0),
+      ),
+      analiseIa: persisted.analiseByEmenda.get(emenda.id) ?? null,
     } satisfies EmendaResumo;
   });
 
@@ -234,13 +262,20 @@ function determineSituacao(
   valorAutorizado: number,
   vinculos: EmendaResumo["vinculos"],
 ): SituacaoEmenda {
-  if (vinculos.some((vinculo) => vinculo.criterio === "conferir")) {
+  if (
+    vinculos.some(
+      (vinculo) =>
+        vinculo.criterio === "conferir" ||
+        vinculo.decisao === "CONFERIR" ||
+        vinculo.decisao === "SUGERIDO",
+    )
+  ) {
     return "Conferir";
   }
 
-  const valorEmpenhado = sum(vinculos, (item) => item.empenho.valorEmpenhado);
-  const valorLiquidado = sum(vinculos, (item) => item.empenho.valorLiquidado);
-  const valorPago = sum(vinculos, (item) => item.empenho.valorPago);
+  const valorEmpenhado = sum(vinculos, (item) => attributedValue(item, "valorEmpenhado"));
+  const valorLiquidado = sum(vinculos, (item) => attributedValue(item, "valorLiquidado"));
+  const valorPago = sum(vinculos, (item) => attributedValue(item, "valorPago"));
 
   if (!valorEmpenhado) {
     return "Aguardando empenho";
@@ -298,4 +333,56 @@ function buildAlertas(rows: EmendaResumo[], artifactsCount: number) {
 
 function sum<T>(rows: T[], getter: (item: T) => number) {
   return Number(rows.reduce((total, item) => total + getter(item), 0).toFixed(2));
+}
+
+async function safeLoadPersistedState() {
+  try {
+    return await loadPersistedLinkState();
+  } catch (error) {
+    console.warn("Nao foi possivel carregar vinculos persistidos.", {
+      erro: error instanceof Error ? error.message : String(error),
+    });
+
+    return {
+      vinculosByEmenda: new Map<string, EmendaResumo["vinculos"]>(),
+      analiseByEmenda: new Map<string, NonNullable<EmendaResumo["analiseIa"]>>(),
+      empenhos: [] as EmpenhoRecord[],
+    };
+  }
+}
+
+function mergeEmpenhos(primary: EmpenhoRecord[], secondary: EmpenhoRecord[]) {
+  const map = new Map<string, EmpenhoRecord>();
+
+  for (const empenho of primary) {
+    map.set(empenho.id, empenho);
+  }
+
+  for (const empenho of secondary) {
+    if (!map.has(empenho.id)) {
+      map.set(empenho.id, empenho);
+    }
+  }
+
+  return Array.from(map.values());
+}
+
+function vinculoKey(vinculo: { emendaId: string; empenhoId: string }) {
+  return `${vinculo.emendaId}:${vinculo.empenhoId}`;
+}
+
+function attributedValue(
+  vinculo: EmendaResumo["vinculos"][number],
+  field: "valorEmpenhado" | "valorLiquidado" | "valorPago",
+) {
+  if (!vinculo.valorAtribuido || vinculo.valorAtribuido >= vinculo.empenho.valorEmpenhado) {
+    return vinculo.empenho[field];
+  }
+
+  if (!vinculo.empenho.valorEmpenhado) {
+    return field === "valorEmpenhado" ? vinculo.valorAtribuido : 0;
+  }
+
+  const ratio = vinculo.valorAtribuido / vinculo.empenho.valorEmpenhado;
+  return Number((vinculo.empenho[field] * ratio).toFixed(2));
 }

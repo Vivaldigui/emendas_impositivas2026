@@ -62,6 +62,16 @@ export type Empenho = Prisma.EmpenhoModel
  */
 export type EmendaEmpenhoVinculo = Prisma.EmendaEmpenhoVinculoModel
 /**
+ * Model AnaliseIaEmenda
+ * 
+ */
+export type AnaliseIaEmenda = Prisma.AnaliseIaEmendaModel
+/**
+ * Model EmendaEmpenhoRevisao
+ * 
+ */
+export type EmendaEmpenhoRevisao = Prisma.EmendaEmpenhoRevisaoModel
+/**
  * Model ColetaEmpenhosArquivo
  * 
  */

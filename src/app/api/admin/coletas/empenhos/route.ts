@@ -5,6 +5,7 @@ import {
   listStoredEmpenhosArtifacts,
   readColetaLogs,
 } from "@/services/empenhosStorage";
+import { isAuthorizedAdmin } from "@/lib/adminAuth";
 import { todayInSaoPaulo } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +35,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  if (!isAuthorized(request)) {
+  if (!isAuthorizedAdmin(request)) {
     return NextResponse.json({ ok: false, erro: "Nao autorizado." }, { status: 401 });
   }
 
@@ -52,18 +53,6 @@ export async function POST(request: NextRequest) {
   });
 
   return NextResponse.json(result, { status: result.ok ? 200 : 500 });
-}
-
-function isAuthorized(request: NextRequest) {
-  const secret = process.env.COLETA_ADMIN_SECRET;
-
-  if (!secret && process.env.NODE_ENV !== "production") {
-    return true;
-  }
-
-  const authorization = request.headers.get("authorization") ?? "";
-  const tokenHeader = request.headers.get("x-admin-secret") ?? "";
-  return authorization === `Bearer ${secret}` || tokenHeader === secret;
 }
 
 function normalizeFormato(value: unknown) {

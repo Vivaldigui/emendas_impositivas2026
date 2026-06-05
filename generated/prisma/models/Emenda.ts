@@ -258,6 +258,7 @@ export type EmendaWhereInput = {
   fonteDocumento?: Prisma.StringFilter<"Emenda"> | string
   vereador?: Prisma.XOR<Prisma.VereadorScalarRelationFilter, Prisma.VereadorWhereInput>
   vinculos?: Prisma.EmendaEmpenhoVinculoListRelationFilter
+  analisesIa?: Prisma.AnaliseIaEmendaListRelationFilter
 }
 
 export type EmendaOrderByWithRelationInput = {
@@ -273,6 +274,7 @@ export type EmendaOrderByWithRelationInput = {
   fonteDocumento?: Prisma.SortOrder
   vereador?: Prisma.VereadorOrderByWithRelationInput
   vinculos?: Prisma.EmendaEmpenhoVinculoOrderByRelationAggregateInput
+  analisesIa?: Prisma.AnaliseIaEmendaOrderByRelationAggregateInput
 }
 
 export type EmendaWhereUniqueInput = Prisma.AtLeast<{
@@ -291,6 +293,7 @@ export type EmendaWhereUniqueInput = Prisma.AtLeast<{
   fonteDocumento?: Prisma.StringFilter<"Emenda"> | string
   vereador?: Prisma.XOR<Prisma.VereadorScalarRelationFilter, Prisma.VereadorWhereInput>
   vinculos?: Prisma.EmendaEmpenhoVinculoListRelationFilter
+  analisesIa?: Prisma.AnaliseIaEmendaListRelationFilter
 }, "id">
 
 export type EmendaOrderByWithAggregationInput = {
@@ -339,6 +342,7 @@ export type EmendaCreateInput = {
   fonteDocumento: string
   vereador: Prisma.VereadorCreateNestedOneWithoutEmendasInput
   vinculos?: Prisma.EmendaEmpenhoVinculoCreateNestedManyWithoutEmendaInput
+  analisesIa?: Prisma.AnaliseIaEmendaCreateNestedManyWithoutEmendaInput
 }
 
 export type EmendaUncheckedCreateInput = {
@@ -353,6 +357,7 @@ export type EmendaUncheckedCreateInput = {
   dotacao?: string | null
   fonteDocumento: string
   vinculos?: Prisma.EmendaEmpenhoVinculoUncheckedCreateNestedManyWithoutEmendaInput
+  analisesIa?: Prisma.AnaliseIaEmendaUncheckedCreateNestedManyWithoutEmendaInput
 }
 
 export type EmendaUpdateInput = {
@@ -367,6 +372,7 @@ export type EmendaUpdateInput = {
   fonteDocumento?: Prisma.StringFieldUpdateOperationsInput | string
   vereador?: Prisma.VereadorUpdateOneRequiredWithoutEmendasNestedInput
   vinculos?: Prisma.EmendaEmpenhoVinculoUpdateManyWithoutEmendaNestedInput
+  analisesIa?: Prisma.AnaliseIaEmendaUpdateManyWithoutEmendaNestedInput
 }
 
 export type EmendaUncheckedUpdateInput = {
@@ -381,6 +387,7 @@ export type EmendaUncheckedUpdateInput = {
   dotacao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fonteDocumento?: Prisma.StringFieldUpdateOperationsInput | string
   vinculos?: Prisma.EmendaEmpenhoVinculoUncheckedUpdateManyWithoutEmendaNestedInput
+  analisesIa?: Prisma.AnaliseIaEmendaUncheckedUpdateManyWithoutEmendaNestedInput
 }
 
 export type EmendaCreateManyInput = {
@@ -547,6 +554,20 @@ export type EmendaUpdateOneRequiredWithoutVinculosNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.EmendaUpdateToOneWithWhereWithoutVinculosInput, Prisma.EmendaUpdateWithoutVinculosInput>, Prisma.EmendaUncheckedUpdateWithoutVinculosInput>
 }
 
+export type EmendaCreateNestedOneWithoutAnalisesIaInput = {
+  create?: Prisma.XOR<Prisma.EmendaCreateWithoutAnalisesIaInput, Prisma.EmendaUncheckedCreateWithoutAnalisesIaInput>
+  connectOrCreate?: Prisma.EmendaCreateOrConnectWithoutAnalisesIaInput
+  connect?: Prisma.EmendaWhereUniqueInput
+}
+
+export type EmendaUpdateOneRequiredWithoutAnalisesIaNestedInput = {
+  create?: Prisma.XOR<Prisma.EmendaCreateWithoutAnalisesIaInput, Prisma.EmendaUncheckedCreateWithoutAnalisesIaInput>
+  connectOrCreate?: Prisma.EmendaCreateOrConnectWithoutAnalisesIaInput
+  upsert?: Prisma.EmendaUpsertWithoutAnalisesIaInput
+  connect?: Prisma.EmendaWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.EmendaUpdateToOneWithWhereWithoutAnalisesIaInput, Prisma.EmendaUpdateWithoutAnalisesIaInput>, Prisma.EmendaUncheckedUpdateWithoutAnalisesIaInput>
+}
+
 export type EmendaCreateWithoutVereadorInput = {
   id: string
   descricao: string
@@ -558,6 +579,7 @@ export type EmendaCreateWithoutVereadorInput = {
   dotacao?: string | null
   fonteDocumento: string
   vinculos?: Prisma.EmendaEmpenhoVinculoCreateNestedManyWithoutEmendaInput
+  analisesIa?: Prisma.AnaliseIaEmendaCreateNestedManyWithoutEmendaInput
 }
 
 export type EmendaUncheckedCreateWithoutVereadorInput = {
@@ -571,6 +593,7 @@ export type EmendaUncheckedCreateWithoutVereadorInput = {
   dotacao?: string | null
   fonteDocumento: string
   vinculos?: Prisma.EmendaEmpenhoVinculoUncheckedCreateNestedManyWithoutEmendaInput
+  analisesIa?: Prisma.AnaliseIaEmendaUncheckedCreateNestedManyWithoutEmendaInput
 }
 
 export type EmendaCreateOrConnectWithoutVereadorInput = {
@@ -626,6 +649,7 @@ export type EmendaCreateWithoutVinculosInput = {
   dotacao?: string | null
   fonteDocumento: string
   vereador: Prisma.VereadorCreateNestedOneWithoutEmendasInput
+  analisesIa?: Prisma.AnaliseIaEmendaCreateNestedManyWithoutEmendaInput
 }
 
 export type EmendaUncheckedCreateWithoutVinculosInput = {
@@ -639,6 +663,7 @@ export type EmendaUncheckedCreateWithoutVinculosInput = {
   acao?: string | null
   dotacao?: string | null
   fonteDocumento: string
+  analisesIa?: Prisma.AnaliseIaEmendaUncheckedCreateNestedManyWithoutEmendaInput
 }
 
 export type EmendaCreateOrConnectWithoutVinculosInput = {
@@ -668,6 +693,7 @@ export type EmendaUpdateWithoutVinculosInput = {
   dotacao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fonteDocumento?: Prisma.StringFieldUpdateOperationsInput | string
   vereador?: Prisma.VereadorUpdateOneRequiredWithoutEmendasNestedInput
+  analisesIa?: Prisma.AnaliseIaEmendaUpdateManyWithoutEmendaNestedInput
 }
 
 export type EmendaUncheckedUpdateWithoutVinculosInput = {
@@ -681,6 +707,79 @@ export type EmendaUncheckedUpdateWithoutVinculosInput = {
   acao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dotacao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fonteDocumento?: Prisma.StringFieldUpdateOperationsInput | string
+  analisesIa?: Prisma.AnaliseIaEmendaUncheckedUpdateManyWithoutEmendaNestedInput
+}
+
+export type EmendaCreateWithoutAnalisesIaInput = {
+  id: string
+  descricao: string
+  valorAutorizado: runtime.Decimal | runtime.DecimalJsLike | number | string
+  area: string
+  secretaria: string
+  codigo?: string | null
+  acao?: string | null
+  dotacao?: string | null
+  fonteDocumento: string
+  vereador: Prisma.VereadorCreateNestedOneWithoutEmendasInput
+  vinculos?: Prisma.EmendaEmpenhoVinculoCreateNestedManyWithoutEmendaInput
+}
+
+export type EmendaUncheckedCreateWithoutAnalisesIaInput = {
+  id: string
+  vereadorId: string
+  descricao: string
+  valorAutorizado: runtime.Decimal | runtime.DecimalJsLike | number | string
+  area: string
+  secretaria: string
+  codigo?: string | null
+  acao?: string | null
+  dotacao?: string | null
+  fonteDocumento: string
+  vinculos?: Prisma.EmendaEmpenhoVinculoUncheckedCreateNestedManyWithoutEmendaInput
+}
+
+export type EmendaCreateOrConnectWithoutAnalisesIaInput = {
+  where: Prisma.EmendaWhereUniqueInput
+  create: Prisma.XOR<Prisma.EmendaCreateWithoutAnalisesIaInput, Prisma.EmendaUncheckedCreateWithoutAnalisesIaInput>
+}
+
+export type EmendaUpsertWithoutAnalisesIaInput = {
+  update: Prisma.XOR<Prisma.EmendaUpdateWithoutAnalisesIaInput, Prisma.EmendaUncheckedUpdateWithoutAnalisesIaInput>
+  create: Prisma.XOR<Prisma.EmendaCreateWithoutAnalisesIaInput, Prisma.EmendaUncheckedCreateWithoutAnalisesIaInput>
+  where?: Prisma.EmendaWhereInput
+}
+
+export type EmendaUpdateToOneWithWhereWithoutAnalisesIaInput = {
+  where?: Prisma.EmendaWhereInput
+  data: Prisma.XOR<Prisma.EmendaUpdateWithoutAnalisesIaInput, Prisma.EmendaUncheckedUpdateWithoutAnalisesIaInput>
+}
+
+export type EmendaUpdateWithoutAnalisesIaInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  descricao?: Prisma.StringFieldUpdateOperationsInput | string
+  valorAutorizado?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  area?: Prisma.StringFieldUpdateOperationsInput | string
+  secretaria?: Prisma.StringFieldUpdateOperationsInput | string
+  codigo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  acao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dotacao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  fonteDocumento?: Prisma.StringFieldUpdateOperationsInput | string
+  vereador?: Prisma.VereadorUpdateOneRequiredWithoutEmendasNestedInput
+  vinculos?: Prisma.EmendaEmpenhoVinculoUpdateManyWithoutEmendaNestedInput
+}
+
+export type EmendaUncheckedUpdateWithoutAnalisesIaInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  vereadorId?: Prisma.StringFieldUpdateOperationsInput | string
+  descricao?: Prisma.StringFieldUpdateOperationsInput | string
+  valorAutorizado?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  area?: Prisma.StringFieldUpdateOperationsInput | string
+  secretaria?: Prisma.StringFieldUpdateOperationsInput | string
+  codigo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  acao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dotacao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  fonteDocumento?: Prisma.StringFieldUpdateOperationsInput | string
+  vinculos?: Prisma.EmendaEmpenhoVinculoUncheckedUpdateManyWithoutEmendaNestedInput
 }
 
 export type EmendaCreateManyVereadorInput = {
@@ -706,6 +805,7 @@ export type EmendaUpdateWithoutVereadorInput = {
   dotacao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fonteDocumento?: Prisma.StringFieldUpdateOperationsInput | string
   vinculos?: Prisma.EmendaEmpenhoVinculoUpdateManyWithoutEmendaNestedInput
+  analisesIa?: Prisma.AnaliseIaEmendaUpdateManyWithoutEmendaNestedInput
 }
 
 export type EmendaUncheckedUpdateWithoutVereadorInput = {
@@ -719,6 +819,7 @@ export type EmendaUncheckedUpdateWithoutVereadorInput = {
   dotacao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fonteDocumento?: Prisma.StringFieldUpdateOperationsInput | string
   vinculos?: Prisma.EmendaEmpenhoVinculoUncheckedUpdateManyWithoutEmendaNestedInput
+  analisesIa?: Prisma.AnaliseIaEmendaUncheckedUpdateManyWithoutEmendaNestedInput
 }
 
 export type EmendaUncheckedUpdateManyWithoutVereadorInput = {
@@ -740,10 +841,12 @@ export type EmendaUncheckedUpdateManyWithoutVereadorInput = {
 
 export type EmendaCountOutputType = {
   vinculos: number
+  analisesIa: number
 }
 
 export type EmendaCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   vinculos?: boolean | EmendaCountOutputTypeCountVinculosArgs
+  analisesIa?: boolean | EmendaCountOutputTypeCountAnalisesIaArgs
 }
 
 /**
@@ -763,6 +866,13 @@ export type EmendaCountOutputTypeCountVinculosArgs<ExtArgs extends runtime.Types
   where?: Prisma.EmendaEmpenhoVinculoWhereInput
 }
 
+/**
+ * EmendaCountOutputType without action
+ */
+export type EmendaCountOutputTypeCountAnalisesIaArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AnaliseIaEmendaWhereInput
+}
+
 
 export type EmendaSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -777,6 +887,7 @@ export type EmendaSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   fonteDocumento?: boolean
   vereador?: boolean | Prisma.VereadorDefaultArgs<ExtArgs>
   vinculos?: boolean | Prisma.Emenda$vinculosArgs<ExtArgs>
+  analisesIa?: boolean | Prisma.Emenda$analisesIaArgs<ExtArgs>
   _count?: boolean | Prisma.EmendaCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["emenda"]>
 
@@ -825,6 +936,7 @@ export type EmendaOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
 export type EmendaInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   vereador?: boolean | Prisma.VereadorDefaultArgs<ExtArgs>
   vinculos?: boolean | Prisma.Emenda$vinculosArgs<ExtArgs>
+  analisesIa?: boolean | Prisma.Emenda$analisesIaArgs<ExtArgs>
   _count?: boolean | Prisma.EmendaCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type EmendaIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -839,6 +951,7 @@ export type $EmendaPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
   objects: {
     vereador: Prisma.$VereadorPayload<ExtArgs>
     vinculos: Prisma.$EmendaEmpenhoVinculoPayload<ExtArgs>[]
+    analisesIa: Prisma.$AnaliseIaEmendaPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1247,6 +1360,7 @@ export interface Prisma__EmendaClient<T, Null = never, ExtArgs extends runtime.T
   readonly [Symbol.toStringTag]: "PrismaPromise"
   vereador<T extends Prisma.VereadorDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.VereadorDefaultArgs<ExtArgs>>): Prisma.Prisma__VereadorClient<runtime.Types.Result.GetResult<Prisma.$VereadorPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   vinculos<T extends Prisma.Emenda$vinculosArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Emenda$vinculosArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EmendaEmpenhoVinculoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  analisesIa<T extends Prisma.Emenda$analisesIaArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Emenda$analisesIaArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AnaliseIaEmendaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1708,6 +1822,30 @@ export type Emenda$vinculosArgs<ExtArgs extends runtime.Types.Extensions.Interna
   take?: number
   skip?: number
   distinct?: Prisma.EmendaEmpenhoVinculoScalarFieldEnum | Prisma.EmendaEmpenhoVinculoScalarFieldEnum[]
+}
+
+/**
+ * Emenda.analisesIa
+ */
+export type Emenda$analisesIaArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AnaliseIaEmenda
+   */
+  select?: Prisma.AnaliseIaEmendaSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AnaliseIaEmenda
+   */
+  omit?: Prisma.AnaliseIaEmendaOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AnaliseIaEmendaInclude<ExtArgs> | null
+  where?: Prisma.AnaliseIaEmendaWhereInput
+  orderBy?: Prisma.AnaliseIaEmendaOrderByWithRelationInput | Prisma.AnaliseIaEmendaOrderByWithRelationInput[]
+  cursor?: Prisma.AnaliseIaEmendaWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AnaliseIaEmendaScalarFieldEnum | Prisma.AnaliseIaEmendaScalarFieldEnum[]
 }
 
 /**

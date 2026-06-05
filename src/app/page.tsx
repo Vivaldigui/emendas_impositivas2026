@@ -159,7 +159,7 @@ export default async function HomePage() {
           title="Emendas"
           description="Lista filtravel, compacta no celular, com detalhes em expansao."
         />
-        <EmendasExplorer emendas={data.emendas} vereadores={data.vereadores} />
+        <EmendasExplorer emendas={data.emendas} ia={data.ia} vereadores={data.vereadores} />
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[1fr_1fr]">
@@ -197,8 +197,8 @@ export default async function HomePage() {
               </code>
             </p>
             <p>
-              Vínculos sugeridos aparecem como conferencia quando ha ambiguidade; o
-              sistema nao transforma similaridade em certeza.
+              Vinculos sugeridos aparecem como conferencia quando ha ambiguidade; o
+              sistema nao confirma automaticamente sugestoes da IA.
             </p>
           </CardContent>
         </Card>

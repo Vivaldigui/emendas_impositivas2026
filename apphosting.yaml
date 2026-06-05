@@ -1,0 +1,31 @@
+runConfig:
+  minInstances: 0
+  maxInstances: 2
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 1024
+
+env:
+  - variable: DATABASE_URL
+    secret: DATABASE_URL
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: COLETA_ADMIN_SECRET
+    secret: COLETA_ADMIN_SECRET
+    availability:
+      - RUNTIME
+  - variable: CRON_SECRET
+    secret: CRON_SECRET
+    availability:
+      - RUNTIME
+  - variable: OPENAI_EMPENHO_ENABLED
+    value: "false"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: OPENAI_EMPENHO_MODEL
+    value: "gpt-5.4-mini"
+    availability:
+      - BUILD
+      - RUNTIME

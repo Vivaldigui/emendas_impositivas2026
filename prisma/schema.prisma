@@ -29,6 +29,7 @@ model Emenda {
   dotacao         String?
   fonteDocumento  String
   vinculos        EmendaEmpenhoVinculo[]
+  analisesIa      AnaliseIaEmenda[]
 
   @@index([vereadorId])
   @@index([area])
@@ -62,17 +63,72 @@ model Empenho {
 }
 
 model EmendaEmpenhoVinculo {
-  id         String  @id @default(cuid())
-  emendaId   String
-  emenda     Emenda  @relation(fields: [emendaId], references: [id], onDelete: Cascade)
-  empenhoId  String
-  empenho    Empenho @relation(fields: [empenhoId], references: [id], onDelete: Cascade)
-  criterio   String
-  confianca  Decimal @db.Decimal(5, 2)
-  observacao String  @db.Text
+  id                  String                   @id @default(cuid())
+  emendaId            String
+  emenda              Emenda                   @relation(fields: [emendaId], references: [id], onDelete: Cascade)
+  empenhoId           String
+  empenho             Empenho                  @relation(fields: [empenhoId], references: [id], onDelete: Cascade)
+  criterio            String
+  confianca           Decimal?                 @db.Decimal(5, 2)
+  observacao          String                   @db.Text
+  valorAtribuido      Decimal?                 @db.Decimal(16, 2)
+  origem              String                   @default("REGRA")
+  decisao             String                   @default("SUGERIDO")
+  criterios           String[]                 @default([])
+  justificativaCurta  String?                  @db.Text
+  camposUsados        String[]                 @default([])
+  modelo              String?
+  promptVersion       String?
+  inputHash           String?
+  criadoEm            DateTime                 @default(now())
+  atualizadoEm        DateTime                 @default(now()) @updatedAt
+  revisadoEm          DateTime?
+  revisadoPor         String?
+  revisoes            EmendaEmpenhoRevisao[]
 
   @@unique([emendaId, empenhoId])
   @@index([criterio])
+  @@index([decisao])
+  @@index([origem])
+  @@index([inputHash])
+}
+
+model AnaliseIaEmenda {
+  id                   String   @id @default(cuid())
+  emendaId             String
+  emenda               Emenda   @relation(fields: [emendaId], references: [id], onDelete: Cascade)
+  resultadoGeral       String
+  dataAnalise          DateTime @default(now())
+  modelo               String?
+  promptVersion        String?
+  inputHash            String
+  quantidadeCandidatos Int
+  justificativa        String?  @db.Text
+  erro                 String?  @db.Text
+
+  @@unique([emendaId, inputHash])
+  @@index([resultadoGeral])
+  @@index([dataAnalise])
+}
+
+model EmendaEmpenhoRevisao {
+  id                String                @id @default(cuid())
+  vinculoId         String
+  vinculo           EmendaEmpenhoVinculo  @relation(fields: [vinculoId], references: [id], onDelete: Cascade)
+  emendaId          String
+  empenhoId         String
+  situacaoAnterior  String
+  situacaoNova      String
+  valorAnterior     Decimal?              @db.Decimal(16, 2)
+  valorNovo         Decimal?              @db.Decimal(16, 2)
+  justificativa     String?               @db.Text
+  revisadoPor       String
+  revisadoEm        DateTime              @default(now())
+
+  @@index([vinculoId])
+  @@index([emendaId])
+  @@index([empenhoId])
+  @@index([revisadoEm])
 }
 
 model ColetaEmpenhosArquivo {

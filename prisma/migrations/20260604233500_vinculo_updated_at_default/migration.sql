@@ -1,0 +1,2 @@
+ALTER TABLE "EmendaEmpenhoVinculo"
+ALTER COLUMN "atualizadoEm" SET DEFAULT CURRENT_TIMESTAMP;

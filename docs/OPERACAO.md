@@ -73,3 +73,108 @@ SONNER_EMPENHOS_ENDPOINT=https://sistema.itanhandu.mg.gov.br/GRP/portalcidadao/w
 
 Sem esse valor, `--modo=auto` usa Playwright publico para abrir o portal e capturar
 o arquivo gerado pela interface.
+
+## Vinculo assistido por IA
+
+O sistema usa uma abordagem hibrida:
+
+1. regras deterministicas selecionam ate 5 empenhos candidatos por emenda;
+2. a IA, quando habilitada, analisa somente esses candidatos;
+3. a IA grava apenas `SUGERIDO`, `CONFERIR` ou `SEM_VINCULO`;
+4. somente usuario autorizado pode mudar um vinculo para `CONFIRMADO` ou `REJEITADO`.
+
+Registros confirmados ou rejeitados manualmente nao sao sobrescritos por novas
+analises.
+
+## Variaveis de ambiente da IA
+
+```text
+OPENAI_API_KEY=
+OPENAI_EMPENHO_MODEL=gpt-5.4-mini
+OPENAI_EMPENHO_ENABLED=true
+```
+
+Para desativar a IA sem desligar o dashboard:
+
+```text
+OPENAI_EMPENHO_ENABLED=false
+```
+
+Sem `OPENAI_API_KEY`, o app continua funcionando com o matcher deterministico e
+o painel mostra `Analise de IA indisponivel`.
+
+## Executar analise
+
+Analise pendente de todas as emendas:
+
+```bash
+curl -X POST http://localhost:3000/api/admin/ia/vincular-empenhos \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <COLETA_ADMIN_SECRET>" \
+  -d "{}"
+```
+
+Analisar emendas especificas:
+
+```bash
+curl -X POST http://localhost:3000/api/admin/ia/vincular-empenhos \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <COLETA_ADMIN_SECRET>" \
+  -d "{\"emendaIds\":[\"vinicius-lar-idosos\"],\"reanalisar\":true}"
+```
+
+Simular sem gravar:
+
+```bash
+curl -X POST http://localhost:3000/api/admin/ia/vincular-empenhos \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <COLETA_ADMIN_SECRET>" \
+  -d "{\"dryRun\":true}"
+```
+
+## Confirmar, rejeitar ou editar valor
+
+Antes de confirmar, confira documentos orcamentarios e o historico do empenho.
+
+```bash
+curl -X POST http://localhost:3000/api/admin/ia/vinculos/<vinculoId>/revisar \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <COLETA_ADMIN_SECRET>" \
+  -d "{\"acao\":\"CONFIRMAR\",\"valorAtribuido\":5000}"
+```
+
+Rejeicao exige justificativa:
+
+```bash
+curl -X POST http://localhost:3000/api/admin/ia/vinculos/<vinculoId>/revisar \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <COLETA_ADMIN_SECRET>" \
+  -d "{\"acao\":\"REJEITAR\",\"justificativa\":\"Objeto divergente\"}"
+```
+
+Editar valor atribuido:
+
+```bash
+curl -X POST http://localhost:3000/api/admin/ia/vinculos/<vinculoId>/revisar \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <COLETA_ADMIN_SECRET>" \
+  -d "{\"acao\":\"ALTERAR_VALOR\",\"valorAtribuido\":2500,\"justificativa\":\"Execucao parcial\"}"
+```
+
+Consultar historico:
+
+```bash
+curl http://localhost:3000/api/admin/ia/revisoes?emendaId=vinicius-lar-idosos \
+  -H "Authorization: Bearer <COLETA_ADMIN_SECRET>"
+```
+
+## Regras de protecao
+
+- O modelo nunca confirma automaticamente.
+- IDs retornados pela IA precisam estar entre os candidatos enviados.
+- Valores negativos sao rejeitados.
+- O mesmo par emenda/empenho nao pode ser duplicado.
+- A soma atribuida a uma emenda ou a um empenho nao pode ultrapassar o valor
+  respectivo, exceto com autorizacao manual e justificativa.
+- Toda revisao manual registra usuario, data, situacao anterior, situacao nova e
+  valor anterior/novo.

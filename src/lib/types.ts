@@ -36,6 +36,10 @@ export type EmpenhoRecord = {
   historico: string | null;
   secretaria: string | null;
   dotacao: string | null;
+  unidadeOrcamentaria?: string | null;
+  naturezaDespesa?: string | null;
+  modalidadeAplicacao?: string | null;
+  fonteRecurso?: string | null;
   ficha: string | null;
   processoCompra: string | null;
   valorEmpenhado: number;
@@ -54,12 +58,45 @@ export type CriterioVinculo =
   | "similaridade_objeto"
   | "conferir";
 
+export type OrigemVinculo = "REGRA" | "IA" | "MANUAL";
+export type DecisaoVinculo = "SUGERIDO" | "CONFERIR" | "CONFIRMADO" | "REJEITADO";
+export type ResultadoAnaliseIa = "SUGERIR_VINCULOS" | "CONFERIR" | "SEM_VINCULO" | "ERRO";
+
 export type EmendaEmpenhoVinculo = {
+  id?: string;
   emendaId: string;
   empenhoId: string;
   criterio: CriterioVinculo;
-  confianca: number;
+  confianca: number | null;
   observacao: string;
+  valorAtribuido?: number | null;
+  origem?: OrigemVinculo;
+  decisao?: DecisaoVinculo;
+  criterios?: string[];
+  divergencias?: string[];
+  justificativaCurta?: string | null;
+  camposUsados?: string[];
+  modelo?: string | null;
+  promptVersion?: string | null;
+  inputHash?: string | null;
+  scoreDeterministico?: number;
+  criadoEm?: string | null;
+  atualizadoEm?: string | null;
+  revisadoEm?: string | null;
+  revisadoPor?: string | null;
+};
+
+export type AnaliseIaResumo = {
+  id: string;
+  emendaId: string;
+  resultadoGeral: ResultadoAnaliseIa;
+  dataAnalise: string;
+  modelo: string | null;
+  promptVersion: string | null;
+  inputHash: string;
+  quantidadeCandidatos: number;
+  justificativa: string | null;
+  erro: string | null;
 };
 
 export type SituacaoEmenda =
@@ -79,6 +116,7 @@ export type EmendaResumo = Emenda & {
   percentualExecucao: number;
   situacao: SituacaoEmenda;
   vinculos: Array<EmendaEmpenhoVinculo & { empenho: EmpenhoRecord }>;
+  analiseIa?: AnaliseIaResumo | null;
 };
 
 export type VereadorResumo = Vereador & {

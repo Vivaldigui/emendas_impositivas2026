@@ -55,6 +55,8 @@ export const ModelName = {
   Emenda: 'Emenda',
   Empenho: 'Empenho',
   EmendaEmpenhoVinculo: 'EmendaEmpenhoVinculo',
+  AnaliseIaEmenda: 'AnaliseIaEmenda',
+  EmendaEmpenhoRevisao: 'EmendaEmpenhoRevisao',
   ColetaEmpenhosArquivo: 'ColetaEmpenhosArquivo',
   ColetaLog: 'ColetaLog'
 } as const
@@ -132,10 +134,56 @@ export const EmendaEmpenhoVinculoScalarFieldEnum = {
   empenhoId: 'empenhoId',
   criterio: 'criterio',
   confianca: 'confianca',
-  observacao: 'observacao'
+  observacao: 'observacao',
+  valorAtribuido: 'valorAtribuido',
+  origem: 'origem',
+  decisao: 'decisao',
+  criterios: 'criterios',
+  justificativaCurta: 'justificativaCurta',
+  camposUsados: 'camposUsados',
+  modelo: 'modelo',
+  promptVersion: 'promptVersion',
+  inputHash: 'inputHash',
+  criadoEm: 'criadoEm',
+  atualizadoEm: 'atualizadoEm',
+  revisadoEm: 'revisadoEm',
+  revisadoPor: 'revisadoPor'
 } as const
 
 export type EmendaEmpenhoVinculoScalarFieldEnum = (typeof EmendaEmpenhoVinculoScalarFieldEnum)[keyof typeof EmendaEmpenhoVinculoScalarFieldEnum]
+
+
+export const AnaliseIaEmendaScalarFieldEnum = {
+  id: 'id',
+  emendaId: 'emendaId',
+  resultadoGeral: 'resultadoGeral',
+  dataAnalise: 'dataAnalise',
+  modelo: 'modelo',
+  promptVersion: 'promptVersion',
+  inputHash: 'inputHash',
+  quantidadeCandidatos: 'quantidadeCandidatos',
+  justificativa: 'justificativa',
+  erro: 'erro'
+} as const
+
+export type AnaliseIaEmendaScalarFieldEnum = (typeof AnaliseIaEmendaScalarFieldEnum)[keyof typeof AnaliseIaEmendaScalarFieldEnum]
+
+
+export const EmendaEmpenhoRevisaoScalarFieldEnum = {
+  id: 'id',
+  vinculoId: 'vinculoId',
+  emendaId: 'emendaId',
+  empenhoId: 'empenhoId',
+  situacaoAnterior: 'situacaoAnterior',
+  situacaoNova: 'situacaoNova',
+  valorAnterior: 'valorAnterior',
+  valorNovo: 'valorNovo',
+  justificativa: 'justificativa',
+  revisadoPor: 'revisadoPor',
+  revisadoEm: 'revisadoEm'
+} as const
+
+export type EmendaEmpenhoRevisaoScalarFieldEnum = (typeof EmendaEmpenhoRevisaoScalarFieldEnum)[keyof typeof EmendaEmpenhoRevisaoScalarFieldEnum]
 
 
 export const ColetaEmpenhosArquivoScalarFieldEnum = {

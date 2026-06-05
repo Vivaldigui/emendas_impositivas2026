@@ -19,6 +19,9 @@ npm run collect:empenhos -- --inicio=2026-01-01 --fim=hoje --formato=excel --mod
 - `GET /api/emendas`
 - `GET /api/admin/coletas/empenhos`
 - `POST /api/admin/coletas/empenhos`
+- `POST /api/admin/ia/vincular-empenhos`
+- `POST /api/admin/ia/vinculos/:id/revisar`
+- `GET /api/admin/ia/revisoes`
 - `GET /api/cron/coletar-empenhos`
 
-Detalhes operacionais em `docs/OPERACAO.md`.
+Detalhes operacionais em `docs/OPERACAO.md`. Deploy Firebase em `docs/FIREBASE.md`.

@@ -28,8 +28,8 @@ const MANDATORY_PROMPT_RULE =
 const DEFAULT_MODEL = "gemini-2.5-flash";
 const MAX_CANDIDATES = 5;
 const DEFAULT_CONCURRENCY = 1;
-const DEFAULT_OPENAI_TIMEOUT_MS = 18_000;
-const DEFAULT_OPENAI_MAX_RETRIES = 1;
+const DEFAULT_OPENAI_TIMEOUT_MS = 30_000;
+const DEFAULT_OPENAI_MAX_RETRIES = 2;
 // Preços em USD por 1M de tokens (estimativa; confira na conta do provedor).
 const MODEL_PRICES_USD_PER_1M: Record<
   string,
@@ -151,14 +151,14 @@ export function getOpenAiEmpenhoModel() {
 export function getOpenAiTimeoutMs() {
   return readPositiveIntegerEnv("OPENAI_EMPENHO_TIMEOUT_MS", DEFAULT_OPENAI_TIMEOUT_MS, {
     min: 5_000,
-    max: 45_000,
+    max: 60_000,
   });
 }
 
 export function getOpenAiMaxRetries() {
   return readPositiveIntegerEnv("OPENAI_EMPENHO_MAX_RETRIES", DEFAULT_OPENAI_MAX_RETRIES, {
     min: 0,
-    max: 2,
+    max: 4,
   });
 }
 
@@ -1580,12 +1580,38 @@ async function retryTemporary<T>(fn: () => Promise<T>, retries: number): Promise
 }
 
 function isTemporaryOpenAiError(error: unknown) {
-  const status = typeof error === "object" && error && "status" in error
-    ? Number((error as { status?: unknown }).status)
-    : 0;
-  const message = error instanceof Error ? error.message.toLowerCase() : "";
+  const record =
+    error && typeof error === "object" ? (error as Record<string, unknown>) : {};
+  const numericStatus = Number(record.status);
+  const numericCode = Number(record.code);
+  const message = (error instanceof Error ? error.message : String(error ?? "")).toLowerCase();
 
-  return status === 429 || status >= 500 || message.includes("timeout") || message.includes("network");
+  const retryableCode =
+    numericStatus === 429 ||
+    numericStatus >= 500 ||
+    numericCode === 429 ||
+    numericCode >= 500;
+
+  // Cobre erros temporarios do Gemini e da rede:
+  // 504 DEADLINE_EXCEEDED, 503 UNAVAILABLE/overloaded, 429 RESOURCE_EXHAUSTED, etc.
+  const retryableMessage = [
+    "timeout",
+    "timed out",
+    "deadline",
+    "unavailable",
+    "overloaded",
+    "resource_exhausted",
+    "rate",
+    "quota",
+    "network",
+    "429",
+    "500",
+    "502",
+    "503",
+    "504",
+  ].some((needle) => message.includes(needle));
+
+  return retryableCode || retryableMessage;
 }
 
 function retryDelayMs(error: unknown, attempt: number) {

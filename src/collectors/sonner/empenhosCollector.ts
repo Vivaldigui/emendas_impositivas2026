@@ -12,7 +12,6 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { parseEmpenhosFile } from "@/collectors/sonner/empenhosParser";
-import { coletarEmpenhosComPlaywright } from "@/collectors/sonner/empenhosPlaywright";
 import {
   EMPENHOS_SOURCE,
   appendColetaLog,
@@ -20,6 +19,16 @@ import {
   looksLikeErrorPayload,
   saveEmpenhosArtifact,
 } from "@/services/empenhosStorage";
+
+// Playwright é carregado de forma preguiçosa (dynamic import) só quando o
+// modo playwright é realmente usado. Isso evita que a dependência nativa
+// entre no grafo de módulos das rotas serverless (GET/cron), o que quebrava
+// o bundling do Next e causava HTTP 500 em /api/admin/coletas/empenhos e
+// /api/cron/coletar-empenhos.
+async function loadPlaywrightCollector() {
+  const mod = await import("@/collectors/sonner/empenhosPlaywright");
+  return mod.coletarEmpenhosComPlaywright;
+}
 import { todayInSaoPaulo } from "@/lib/utils";
 
 type ColetarEmpenhosInput = {
@@ -41,6 +50,7 @@ const SONNER_PUBLIC_KEY =
 
 export async function coletarEmpenhos(input: ColetarEmpenhosInput) {
   if (input.modo === "playwright") {
+    const coletarEmpenhosComPlaywright = await loadPlaywrightCollector();
     return coletarEmpenhosComPlaywright(input);
   }
 
@@ -59,6 +69,7 @@ export async function coletarEmpenhos(input: ColetarEmpenhosInput) {
       erro: direct.erro,
     });
 
+    const coletarEmpenhosComPlaywright = await loadPlaywrightCollector();
     return coletarEmpenhosComPlaywright({
       ...input,
       fallbackReason: direct.erro,

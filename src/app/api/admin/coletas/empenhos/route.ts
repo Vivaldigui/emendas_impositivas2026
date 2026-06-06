@@ -11,27 +11,38 @@ import { todayInSaoPaulo } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const [logs, artifacts] = await Promise.all([
-    readColetaLogs(80),
-    listStoredEmpenhosArtifacts(),
-  ]);
+  try {
+    const [logs, artifacts] = await Promise.all([
+      readColetaLogs(80),
+      listStoredEmpenhosArtifacts(),
+    ]);
 
-  return NextResponse.json({
-    logs,
-    artifacts: artifacts.map((artifact) => ({
-      inicio: artifact.inicio,
-      fim: artifact.fim,
-      formato: artifact.formato,
-      hashArquivo: artifact.hashArquivo,
-      nomeArquivo: artifact.nomeArquivo,
-      dataColeta: artifact.dataColeta,
-      status: artifact.status,
-      erro: artifact.erro,
-      registrosBrutos: artifact.registrosBrutos,
-      registrosImportados: artifact.registrosImportados,
-      warnings: artifact.warnings,
-    })),
-  });
+    return NextResponse.json({
+      logs,
+      artifacts: artifacts.map((artifact) => ({
+        inicio: artifact.inicio,
+        fim: artifact.fim,
+        formato: artifact.formato,
+        hashArquivo: artifact.hashArquivo,
+        nomeArquivo: artifact.nomeArquivo,
+        dataColeta: artifact.dataColeta,
+        status: artifact.status,
+        erro: artifact.erro,
+        registrosBrutos: artifact.registrosBrutos,
+        registrosImportados: artifact.registrosImportados,
+        warnings: artifact.warnings,
+      })),
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        logs: [],
+        artifacts: [],
+        erro: error instanceof Error ? error.message : "Falha ao ler histórico de coletas.",
+      },
+      { status: 200 },
+    );
+  }
 }
 
 export async function POST(request: NextRequest) {

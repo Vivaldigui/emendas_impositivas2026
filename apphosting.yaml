@@ -34,7 +34,17 @@ env:
       - BUILD
       - RUNTIME
   - variable: OPENAI_EMPENHO_MODEL
-    value: "gpt-5.5"
+    value: "gpt-5.4"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: OPENAI_EMPENHO_TIMEOUT_MS
+    value: "18000"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: OPENAI_EMPENHO_MAX_RETRIES
+    value: "1"
     availability:
       - BUILD
       - RUNTIME

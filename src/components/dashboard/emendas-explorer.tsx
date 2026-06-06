@@ -1251,6 +1251,13 @@ function summarizeUnexpectedResponse(text: string, status: number) {
     .trim()
     .slice(0, 240);
 
+  if (
+    status === 503 &&
+    /upstream connect error|disconnect\/reset|connection termination/i.test(cleaned)
+  ) {
+    return "O servidor encerrou a analise antes de responder. Tente novamente; se repetir, reduza o lote ou aguarde alguns minutos para a OpenAI responder com menor latencia.";
+  }
+
   return cleaned
     ? `Resposta inesperada do servidor (${status}): ${cleaned}`
     : `Resposta inesperada do servidor (${status}).`;

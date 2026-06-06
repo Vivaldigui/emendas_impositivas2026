@@ -6,6 +6,8 @@ import { analisarVinculosEmendas } from "@/services/aiEmpenhoLinker";
 import { invalidateDashboardCache } from "@/services/dashboardService";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
 const BodySchema = z.object({
   emendaIds: z.array(z.string()).optional(),
@@ -51,7 +53,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({
-      ...result,
+      ...compactAnalyzeResult(result),
       solicitadoPor: admin.id,
     });
   } catch (error) {
@@ -63,4 +65,21 @@ export async function POST(request: NextRequest) {
       { status: 500 },
     );
   }
+}
+
+type AnalyzeResult = Awaited<ReturnType<typeof analisarVinculosEmendas>>;
+
+function compactAnalyzeResult(result: AnalyzeResult) {
+  return {
+    ...result,
+    resultados: result.resultados.map((item) => ({
+      emendaId: item.emendaId,
+      status: item.status,
+      inputHash: item.inputHash,
+      candidatos: item.candidatos,
+      erro: item.erro,
+      iaDisponivel: item.iaDisponivel,
+      uso: item.uso,
+    })),
+  };
 }

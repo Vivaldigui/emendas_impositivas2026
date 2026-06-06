@@ -44,11 +44,17 @@ A IA fica ativada em producao pelo `apphosting.yaml`:
 
 ```text
 OPENAI_EMPENHO_ENABLED=true
-OPENAI_EMPENHO_MODEL=gpt-5.5
+OPENAI_EMPENHO_MODEL=gpt-5.4
+OPENAI_EMPENHO_TIMEOUT_MS=18000
+OPENAI_EMPENHO_MAX_RETRIES=1
 ```
 
 Para desativar temporariamente, mude `OPENAI_EMPENHO_ENABLED` para
 `"false"` em `apphosting.yaml` e refaca o rollout.
+
+O modelo pode ser alterado em `OPENAI_EMPENHO_MODEL`. Em producao, mantenha
+`OPENAI_EMPENHO_TIMEOUT_MS` e `OPENAI_EMPENHO_MAX_RETRIES` conservadores para
+evitar que o App Hosting encerre a conexao antes de a rota responder em JSON.
 
 ## Publicar rollout
 

@@ -90,8 +90,10 @@ analises.
 
 ```text
 OPENAI_API_KEY=
-OPENAI_EMPENHO_MODEL=gpt-5.5
+OPENAI_EMPENHO_MODEL=gpt-5.4
 OPENAI_EMPENHO_ENABLED=true
+OPENAI_EMPENHO_TIMEOUT_MS=18000
+OPENAI_EMPENHO_MAX_RETRIES=1
 ```
 
 Para desativar a IA sem desligar o dashboard:
@@ -102,6 +104,11 @@ OPENAI_EMPENHO_ENABLED=false
 
 Sem `OPENAI_API_KEY`, o app continua funcionando com o matcher deterministico e
 o painel mostra `Analise de IA indisponivel`.
+
+`OPENAI_EMPENHO_TIMEOUT_MS` e `OPENAI_EMPENHO_MAX_RETRIES` controlam quanto tempo
+a rota admin espera pela OpenAI antes de registrar erro controlado. Valores muito
+altos podem virar `503` no App Hosting porque o proxy encerra a conexao antes de
+o Next.js enviar uma resposta JSON.
 
 O painel `/admin` mostra uso estimado da IA por dia, mes e total registrado:
 tokens de entrada, tokens de saida e custo estimado em USD. O valor e calculado

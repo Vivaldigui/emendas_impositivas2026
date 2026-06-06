@@ -26,11 +26,11 @@ import { prisma } from "../../lib/prisma";
 export const AI_PROMPT_VERSION = "empenho-linker-v1";
 const MANDATORY_PROMPT_RULE =
   "Não invente vínculos financeiros. Analise somente os empenhos candidatos fornecidos. Quando houver qualquer dúvida relevante, retorne CONFERIR. Quando nenhum candidato apresentar evidências suficientes, retorne SEM_VINCULO. Nunca trate semelhança de valor, isoladamente, como prova de vínculo.";
-const DEFAULT_MODEL = "gpt-5.5";
+const DEFAULT_MODEL = "gpt-5.4";
 const MAX_CANDIDATES = 5;
 const DEFAULT_CONCURRENCY = 1;
-const OPENAI_TIMEOUT_MS = 25_000;
-const OPENAI_MAX_RETRIES = 3;
+const DEFAULT_OPENAI_TIMEOUT_MS = 18_000;
+const DEFAULT_OPENAI_MAX_RETRIES = 1;
 const MODEL_PRICES_USD_PER_1M: Record<
   string,
   { input: number; cachedInput: number; output: number }
@@ -135,6 +135,20 @@ export function isOpenAiEmpenhoEnabled() {
 
 export function getOpenAiEmpenhoModel() {
   return process.env.OPENAI_EMPENHO_MODEL || DEFAULT_MODEL;
+}
+
+export function getOpenAiTimeoutMs() {
+  return readPositiveIntegerEnv("OPENAI_EMPENHO_TIMEOUT_MS", DEFAULT_OPENAI_TIMEOUT_MS, {
+    min: 5_000,
+    max: 45_000,
+  });
+}
+
+export function getOpenAiMaxRetries() {
+  return readPositiveIntegerEnv("OPENAI_EMPENHO_MAX_RETRIES", DEFAULT_OPENAI_MAX_RETRIES, {
+    min: 0,
+    max: 2,
+  });
 }
 
 export async function analisarVinculosEmendas(
@@ -639,9 +653,9 @@ async function callOpenAiForEmenda(
             format: zodTextFormat(AiEmpenhoLinkResultSchema, "empenho_link_result"),
           },
         },
-        { timeout: OPENAI_TIMEOUT_MS },
+        { timeout: getOpenAiTimeoutMs() },
       ),
-    OPENAI_MAX_RETRIES,
+    getOpenAiMaxRetries(),
   );
 
   if (!response.output_parsed) {
@@ -1474,6 +1488,21 @@ function readRetryAfterMs(error: unknown) {
   const seconds = Number(rawValue);
 
   return Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : null;
+}
+
+function readPositiveIntegerEnv(
+  name: string,
+  fallback: number,
+  bounds: { min: number; max: number },
+) {
+  const raw = process.env[name];
+  const parsed = raw ? Number.parseInt(raw, 10) : NaN;
+
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+
+  return Math.max(bounds.min, Math.min(bounds.max, parsed));
 }
 
 function humanizeOpenAiError(error: unknown) {

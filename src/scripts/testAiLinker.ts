@@ -2,22 +2,21 @@ import "dotenv/config";
 
 import assert from "node:assert/strict";
 
-import type OpenAI from "openai";
-
 import type { Emenda, EmpenhoRecord } from "@/lib/types";
 import {
   analisarUmaEmenda,
   getHistoricoRevisoes,
   revisarVinculo,
   validateAiResult,
+  type IaGenerateFn,
 } from "@/services/aiEmpenhoLinker";
 import { gerarCandidatosDeterministicos } from "@/services/emendaMatcher";
 import { prisma } from "../../lib/prisma";
 
 const PREFIX = `teste-ai-${Date.now()}`;
-const oldApiKey = process.env.OPENAI_API_KEY;
-const oldEnabled = process.env.OPENAI_EMPENHO_ENABLED;
-const oldModel = process.env.OPENAI_EMPENHO_MODEL;
+const oldApiKey = process.env.GEMINI_API_KEY;
+const oldEnabled = process.env.IA_EMPENHO_ENABLED;
+const oldModel = process.env.GEMINI_EMPENHO_MODEL;
 
 async function main() {
   if (!process.env.DATABASE_URL) {
@@ -25,7 +24,7 @@ async function main() {
     return;
   }
 
-  process.env.OPENAI_EMPENHO_MODEL = "gpt-test";
+  process.env.GEMINI_EMPENHO_MODEL = "gemini-test";
 
   await setupBaseRecords();
   await testSchemaAndCandidateProtection();
@@ -95,18 +94,18 @@ async function testOpenAiUnavailableFallback() {
   const emenda = makeEmenda(`${PREFIX}-sem-chave`);
   const empenho = makeEmpenho(`${PREFIX}-sem-chave-emp`);
 
-  delete process.env.OPENAI_API_KEY;
-  process.env.OPENAI_EMPENHO_ENABLED = "true";
+  delete process.env.GEMINI_API_KEY;
+  process.env.IA_EMPENHO_ENABLED = "true";
 
   const result = await analisarUmaEmenda(emenda, [empenho], {
     dryRun: true,
     reanalisar: true,
   });
 
-  assert.equal(result.iaDisponivel, false, "Sem OPENAI_API_KEY a IA deve ficar indisponivel.");
+  assert.equal(result.iaDisponivel, false, "Sem GEMINI_API_KEY a IA deve ficar indisponivel.");
   assert.match(result.status, /SUGERIDO|CONFERIR/, "Matcher deterministico deve continuar funcionando.");
 
-  process.env.OPENAI_EMPENHO_ENABLED = "false";
+  process.env.IA_EMPENHO_ENABLED = "false";
   const disabled = await analisarUmaEmenda(emenda, [empenho], {
     dryRun: true,
     reanalisar: true,
@@ -115,8 +114,8 @@ async function testOpenAiUnavailableFallback() {
 }
 
 async function testInvalidAiResponses() {
-  process.env.OPENAI_API_KEY = "test-key";
-  process.env.OPENAI_EMPENHO_ENABLED = "true";
+  process.env.GEMINI_API_KEY = "test-key";
+  process.env.IA_EMPENHO_ENABLED = "true";
 
   const emenda = makeEmenda(`${PREFIX}-invalid`);
   const empenho = makeEmpenho(`${PREFIX}-invalid-emp`);
@@ -124,7 +123,7 @@ async function testInvalidAiResponses() {
   const invalidSchema = await analisarUmaEmenda(emenda, [empenho], {
     dryRun: true,
     reanalisar: true,
-    openAiClient: fakeClient({
+    iaGenerate: fakeClient({
       emendaId: emenda.id,
       decisaoGeral: "SUGERIR_VINCULOS",
       confiancaGeral: 1.5,
@@ -138,7 +137,7 @@ async function testInvalidAiResponses() {
   const inventedId = await analisarUmaEmenda(emenda, [empenho], {
     dryRun: true,
     reanalisar: true,
-    openAiClient: fakeClient({
+    iaGenerate: fakeClient({
       emendaId: emenda.id,
       decisaoGeral: "SUGERIR_VINCULOS",
       confiancaGeral: 0.9,
@@ -161,8 +160,8 @@ async function testInvalidAiResponses() {
 }
 
 async function testIdempotencyAndDuplicateProtection() {
-  process.env.OPENAI_API_KEY = "test-key";
-  process.env.OPENAI_EMPENHO_ENABLED = "true";
+  process.env.GEMINI_API_KEY = "test-key";
+  process.env.IA_EMPENHO_ENABLED = "true";
 
   const emenda = makeEmenda(`${PREFIX}-idempotente`);
   const empenho = makeEmpenho(`${PREFIX}-idempotente-emp`);
@@ -177,14 +176,14 @@ async function testIdempotencyAndDuplicateProtection() {
 
   const first = await analisarUmaEmenda(emenda, [empenho], {
     reanalisar: true,
-    openAiClient: client,
+    iaGenerate: client,
   });
   assert.equal(first.status, "SUGERIDO");
   assert.equal(first.vinculos.length, 1);
 
   const second = await analisarUmaEmenda(emenda, [empenho], {
     reanalisar: false,
-    openAiClient: client,
+    iaGenerate: client,
   });
   assert.equal(second.status, "REAPROVEITADO", "Mesmo inputHash deve reaproveitar analise.");
   assert.equal(calls, 1, "Chamada duplicada nao deve consumir IA novamente.");
@@ -273,8 +272,8 @@ async function testManualReviewAuditAndLimits() {
 }
 
 async function testConfirmedLinkIsNotOverwritten() {
-  process.env.OPENAI_API_KEY = "test-key";
-  process.env.OPENAI_EMPENHO_ENABLED = "true";
+  process.env.GEMINI_API_KEY = "test-key";
+  process.env.IA_EMPENHO_ENABLED = "true";
 
   const emenda = makeEmenda(`${PREFIX}-confirmado`);
   const empenho = makeEmpenho(`${PREFIX}-confirmado-emp`);
@@ -290,7 +289,7 @@ async function testConfirmedLinkIsNotOverwritten() {
 
   const result = await analisarUmaEmenda(emenda, [empenho], {
     reanalisar: true,
-    openAiClient: fakeClient(aiSuggestion(emenda, empenho, 80)),
+    iaGenerate: fakeClient(aiSuggestion(emenda, empenho, 80)),
   });
   assert.equal(result.status, "SUGERIDO");
   assert.equal(result.vinculos.length, 0, "Analise nova nao deve sobrescrever vinculo confirmado.");
@@ -300,15 +299,14 @@ async function testConfirmedLinkIsNotOverwritten() {
   assert.equal(Number(after.valorAtribuido), 40);
 }
 
-function fakeClient(resultOrFactory: unknown | (() => unknown)) {
-  return {
-    responses: {
-      parse: async () => ({
-        output_parsed:
-          typeof resultOrFactory === "function" ? (resultOrFactory as () => unknown)() : resultOrFactory,
-      }),
-    },
-  } as unknown as Pick<OpenAI, "responses">;
+function fakeClient(resultOrFactory: unknown | (() => unknown)): IaGenerateFn {
+  return async () => ({
+    result:
+      typeof resultOrFactory === "function"
+        ? (resultOrFactory as () => unknown)()
+        : resultOrFactory,
+    uso: null,
+  });
 }
 
 function aiSuggestion(emenda: Emenda, empenho: EmpenhoRecord, valorAtribuido: number) {
@@ -499,9 +497,9 @@ main()
     process.exitCode = 1;
   })
   .finally(async () => {
-    process.env.OPENAI_API_KEY = oldApiKey;
-    process.env.OPENAI_EMPENHO_ENABLED = oldEnabled;
-    process.env.OPENAI_EMPENHO_MODEL = oldModel;
+    process.env.GEMINI_API_KEY = oldApiKey;
+    process.env.IA_EMPENHO_ENABLED = oldEnabled;
+    process.env.GEMINI_EMPENHO_MODEL = oldModel;
     await cleanup().catch(() => undefined);
     await prisma.$disconnect();
   });

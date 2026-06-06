@@ -24,17 +24,17 @@ env:
     secret: CRON_SECRET
     availability:
       - RUNTIME
-  - variable: OPENAI_API_KEY
-    secret: OPENAI_API_KEY
+  - variable: GEMINI_API_KEY
+    secret: GEMINI_API_KEY
     availability:
       - RUNTIME
-  - variable: OPENAI_EMPENHO_ENABLED
+  - variable: IA_EMPENHO_ENABLED
     value: "true"
     availability:
       - BUILD
       - RUNTIME
-  - variable: OPENAI_EMPENHO_MODEL
-    value: "gpt-5.4"
+  - variable: GEMINI_EMPENHO_MODEL
+    value: "gemini-2.5-flash"
     availability:
       - BUILD
       - RUNTIME

@@ -1211,7 +1211,7 @@ function summarizeUnexpectedResponse(text: string, status: number) {
     status === 503 &&
     /upstream connect error|disconnect\/reset|connection termination/i.test(cleaned)
   ) {
-    return "O servidor encerrou a analise antes de responder. Tente novamente; se repetir, reduza o lote ou aguarde alguns minutos para a OpenAI responder com menor latencia.";
+    return "O servidor encerrou a analise antes de responder. Tente novamente; se repetir, reduza o lote ou aguarde alguns minutos para a IA (Gemini) responder com menor latencia.";
   }
 
   return cleaned
@@ -1254,7 +1254,7 @@ function formatApiError(message: string, details?: AuthErrorDetails) {
     normalized.includes("429") ||
     normalized.includes("quota")
   ) {
-    return "Limite temporario da OpenAI atingido. Aguarde alguns minutos e tente novamente, preferencialmente em uma emenda por vez.";
+    return "Limite temporario da IA (Gemini) atingido. Aguarde alguns minutos e tente novamente, preferencialmente em uma emenda por vez.";
   }
 
   return message;

@@ -1,7 +1,6 @@
 import crypto from "node:crypto";
 
-import OpenAI from "openai";
-import { zodTextFormat } from "openai/helpers/zod";
+import { GoogleGenAI, Type } from "@google/genai";
 import { z } from "zod";
 
 import type { Prisma } from "../../generated/prisma/client";
@@ -26,16 +25,21 @@ import { prisma } from "../../lib/prisma";
 export const AI_PROMPT_VERSION = "empenho-linker-v1";
 const MANDATORY_PROMPT_RULE =
   "Não invente vínculos financeiros. Analise somente os empenhos candidatos fornecidos. Quando houver qualquer dúvida relevante, retorne CONFERIR. Quando nenhum candidato apresentar evidências suficientes, retorne SEM_VINCULO. Nunca trate semelhança de valor, isoladamente, como prova de vínculo.";
-const DEFAULT_MODEL = "gpt-5.4";
+const DEFAULT_MODEL = "gemini-2.5-flash";
 const MAX_CANDIDATES = 5;
 const DEFAULT_CONCURRENCY = 1;
 const DEFAULT_OPENAI_TIMEOUT_MS = 18_000;
 const DEFAULT_OPENAI_MAX_RETRIES = 1;
+// Preços em USD por 1M de tokens (estimativa; confira na conta do provedor).
 const MODEL_PRICES_USD_PER_1M: Record<
   string,
   { input: number; cachedInput: number; output: number }
 > = {
-  "gpt-5.5": { input: 5, cachedInput: 0.5, output: 30 },
+  "gemini-2.5-pro": { input: 1.25, cachedInput: 0.31, output: 10 },
+  "gemini-2.5-flash": { input: 0.3, cachedInput: 0.075, output: 2.5 },
+  "gemini-2.5-flash-lite": { input: 0.1, cachedInput: 0.025, output: 0.4 },
+  "gemini-2.0-flash": { input: 0.1, cachedInput: 0.025, output: 0.4 },
+  // mantidos para análises antigas registradas com OpenAI
   "gpt-5.4": { input: 2.5, cachedInput: 0.25, output: 15 },
   "gpt-5.4-mini": { input: 0.75, cachedInput: 0.075, output: 4.5 },
   "gpt-4o-mini": { input: 0.15, cachedInput: 0.075, output: 0.6 },
@@ -62,12 +66,17 @@ const AiEmpenhoLinkResultSchema = z.object({
 
 export type AiEmpenhoLinkResult = z.infer<typeof AiEmpenhoLinkResultSchema>;
 
+export type IaGenerateFn = (
+  payload: unknown,
+) => Promise<{ result: unknown; uso: AiUsageResumo | null }>;
+
 export type AnalyzeBatchOptions = {
   emendaIds?: string[];
   reanalisar?: boolean;
   dryRun?: boolean;
   concurrency?: number;
-  openAiClient?: Pick<OpenAI, "responses">;
+  // Injeção usada em testes para simular a resposta da IA sem chamar a rede.
+  iaGenerate?: IaGenerateFn;
 };
 
 export type AiUsageResumo = {
@@ -127,14 +136,16 @@ export type ReviewInput = {
 };
 
 export function isOpenAiEmpenhoEnabled() {
-  return (
-    process.env.OPENAI_EMPENHO_ENABLED !== "false" &&
-    Boolean(process.env.OPENAI_API_KEY)
-  );
+  const flag = process.env.IA_EMPENHO_ENABLED ?? process.env.OPENAI_EMPENHO_ENABLED;
+  return flag !== "false" && Boolean(process.env.GEMINI_API_KEY);
 }
 
 export function getOpenAiEmpenhoModel() {
-  return process.env.OPENAI_EMPENHO_MODEL || DEFAULT_MODEL;
+  return (
+    process.env.GEMINI_EMPENHO_MODEL?.trim() ||
+    process.env.OPENAI_EMPENHO_MODEL?.trim() ||
+    DEFAULT_MODEL
+  );
 }
 
 export function getOpenAiTimeoutMs() {
@@ -166,7 +177,7 @@ export async function analisarVinculosEmendas(
     (emenda) =>
       analisarUmaEmenda(emenda, empenhos, {
         ...options,
-        openAiClient: options.openAiClient,
+        iaGenerate: options.iaGenerate,
       }),
   );
   const uso = summarizeUsage(results.map((result) => result.uso).filter(Boolean));
@@ -305,7 +316,7 @@ export async function analisarUmaEmenda(
     }
 
     const aiResponse = iaDisponivel
-      ? await callOpenAiForEmenda(payload, options.openAiClient)
+      ? await callGeminiForEmenda(payload, options.iaGenerate)
       : { result: fallbackDeterministico(emenda.id, candidatos), uso: null };
     const sanitized = validateAiResult(aiResponse.result, emenda, candidatos);
 
@@ -409,7 +420,7 @@ async function loadRejectedEmpenhoIds(emendaId: string) {
 }
 
 export function validateAiResult(
-  result: AiEmpenhoLinkResult,
+  result: unknown,
   emenda: Emenda,
   candidatos: DeterministicCandidate[],
 ): AiEmpenhoLinkResult {
@@ -687,48 +698,108 @@ export async function getIaUsageSummary() {
   };
 }
 
-async function callOpenAiForEmenda(
+const GEMINI_RESPONSE_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    emendaId: { type: Type.STRING },
+    decisaoGeral: {
+      type: Type.STRING,
+      enum: ["SUGERIR_VINCULOS", "CONFERIR", "SEM_VINCULO"],
+    },
+    confiancaGeral: { type: Type.NUMBER },
+    vinculos: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          empenhoId: { type: Type.STRING },
+          valorAtribuido: { type: Type.NUMBER, nullable: true },
+          confianca: { type: Type.NUMBER },
+          criterios: { type: Type.ARRAY, items: { type: Type.STRING } },
+          divergencias: { type: Type.ARRAY, items: { type: Type.STRING } },
+          justificativaCurta: { type: Type.STRING },
+          camposUsados: { type: Type.ARRAY, items: { type: Type.STRING } },
+        },
+        required: [
+          "empenhoId",
+          "valorAtribuido",
+          "confianca",
+          "criterios",
+          "divergencias",
+          "justificativaCurta",
+          "camposUsados",
+        ],
+      },
+    },
+    justificativaGeral: { type: Type.STRING },
+    alertas: { type: Type.ARRAY, items: { type: Type.STRING } },
+  },
+  required: [
+    "emendaId",
+    "decisaoGeral",
+    "confiancaGeral",
+    "vinculos",
+    "justificativaGeral",
+    "alertas",
+  ],
+};
+
+async function callGeminiForEmenda(
   payload: ReturnType<typeof buildAiPayload>,
-  injectedClient?: Pick<OpenAI, "responses">,
+  injectedGenerate?: IaGenerateFn,
 ) {
-  const client = injectedClient ?? new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  if (injectedGenerate) {
+    return injectedGenerate(payload);
+  }
+
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   const model = getOpenAiEmpenhoModel();
   const response = await retryTemporary(
     () =>
-      client.responses.parse(
-        {
-          model,
-          instructions: buildSystemPrompt(),
-          input: JSON.stringify(payload),
-          text: {
-            format: zodTextFormat(AiEmpenhoLinkResultSchema, "empenho_link_result"),
-          },
+      ai.models.generateContent({
+        model,
+        contents: JSON.stringify(payload),
+        config: {
+          systemInstruction: buildSystemPrompt(),
+          responseMimeType: "application/json",
+          responseSchema: GEMINI_RESPONSE_SCHEMA,
+          temperature: 0,
+          // Desliga o "thinking" nos modelos flash para reduzir custo/latência.
+          ...(model.includes("flash") ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
+          httpOptions: { timeout: getOpenAiTimeoutMs() },
         },
-        { timeout: getOpenAiTimeoutMs() },
-      ),
+      }),
     getOpenAiMaxRetries(),
   );
 
-  if (!response.output_parsed) {
+  const text = response.text;
+  if (!text) {
     throw new Error("Resposta da IA nao contem resultado estruturado.");
   }
 
+  let result: unknown;
+  try {
+    result = JSON.parse(text);
+  } catch {
+    throw new Error("Resposta da IA nao e um JSON valido.");
+  }
+
   return {
-    result: response.output_parsed,
-    uso: extractOpenAiUsage(response, model),
+    result,
+    uso: extractGeminiUsage(response, model),
   };
 }
 
-function extractOpenAiUsage(response: unknown, model: string): AiUsageResumo | null {
-  const usage = readRecord(readRecord(response).usage);
-  const inputTokens = readNumberField(usage, ["input_tokens", "inputTokens"]);
-  const outputTokens = readNumberField(usage, ["output_tokens", "outputTokens"]);
+function extractGeminiUsage(response: unknown, model: string): AiUsageResumo | null {
+  const usage = readRecord(readRecord(response).usageMetadata);
+  const inputTokens = readNumberField(usage, ["promptTokenCount"]);
+  const outputTokens = readNumberField(usage, [
+    "candidatesTokenCount",
+    "responseTokenCount",
+  ]);
   const totalTokens =
-    readNumberField(usage, ["total_tokens", "totalTokens"]) ?? inputTokens + outputTokens;
-  const details = readRecord(
-    usage.input_tokens_details ?? usage.inputTokensDetails ?? usage.input_details,
-  );
-  const cachedInputTokens = readNumberField(details, ["cached_tokens", "cachedTokens"]);
+    readNumberField(usage, ["totalTokenCount"]) ?? inputTokens + outputTokens;
+  const cachedInputTokens = readNumberField(usage, ["cachedContentTokenCount"]);
 
   if (!inputTokens && !outputTokens && !totalTokens) {
     return null;
@@ -1565,11 +1636,11 @@ function humanizeOpenAiError(error: unknown) {
   const normalized = message.toLowerCase();
 
   if (status === 429 || normalized.includes("rate") || normalized.includes("quota")) {
-    return "Limite temporario da OpenAI atingido. Aguarde alguns minutos e execute a analise novamente, ou analise uma emenda por vez.";
+    return "Limite temporario da IA (Gemini) atingido. Aguarde alguns minutos e execute a analise novamente, ou analise uma emenda por vez.";
   }
 
   if (normalized.includes("timeout")) {
-    return "A OpenAI demorou para responder. Tente novamente em alguns minutos.";
+    return "A IA (Gemini) demorou para responder. Tente novamente em alguns minutos.";
   }
 
   return message;

@@ -246,7 +246,7 @@ function UsageCard({
         </div>
         <p className="text-xs leading-5 text-slate-500">
           Valor estimado por token retornado pela API. A cobrança real deve ser conferida na
-          conta OpenAI.
+          conta do Google AI Studio / Gemini.
         </p>
       </CardContent>
     </Card>

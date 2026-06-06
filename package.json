@@ -18,6 +18,7 @@
     "collect:empenhos:daily": "tsx src/collectors/sonner/empenhosCollector.ts --inicio=2026-01-01 --fim=hoje --formato=excel --modo=auto"
   },
   "dependencies": {
+    "@google/genai": "^2.8.0",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "cheerio": "^1.2.0",
@@ -26,7 +27,6 @@
     "dotenv": "^17.4.2",
     "lucide-react": "^1.16.0",
     "next": "16.2.6",
-    "openai": "^6.42.0",
     "pg": "^8.21.0",
     "playwright": "^1.60.0",
     "react": "19.2.4",

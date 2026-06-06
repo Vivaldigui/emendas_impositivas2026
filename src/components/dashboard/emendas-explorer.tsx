@@ -187,6 +187,31 @@ export function EmendasExplorer({
     }));
   }
 
+  async function marcarSemEmpenho(emendaId: string) {
+    setBusyAction(`sem-empenho-${emendaId}`);
+    setMessage(null);
+    try {
+      const response = await fetch(
+        `/api/admin/ia/emendas/${emendaId}/rejeitar-sugestoes`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({}),
+        },
+      );
+      const payload = await readJsonResponse(response);
+      if (!response.ok) {
+        throw new Error(formatApiError(payload.error ?? "Falha ao marcar emenda.", payload.details));
+      }
+      setMessage("Sugestões rejeitadas. A emenda saiu de 'Conferir'.");
+      router.refresh();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Falha ao marcar emenda.");
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
   async function analyze(options: { emendaIds?: string[]; reanalisar?: boolean }) {
     const targets = options.emendaIds?.length
       ? displayEmendas.filter((item) => options.emendaIds?.includes(item.id))
@@ -489,6 +514,22 @@ export function EmendasExplorer({
                   <RotateCcw className="h-4 w-4" aria-hidden />
                   Analisar novamente
                 </Button>
+                {item.vinculos.some(
+                  (vinculo) =>
+                    vinculo.decisao === "SUGERIDO" || vinculo.decisao === "CONFERIR",
+                ) ? (
+                  <Button
+                    disabled={busyAction !== null}
+                    onClick={() => marcarSemEmpenho(item.id)}
+                    type="button"
+                    variant="secondary"
+                  >
+                    <XCircle className="h-4 w-4" aria-hidden />
+                    {busyAction === `sem-empenho-${item.id}`
+                      ? "Marcando..."
+                      : "Marcar sem empenho"}
+                  </Button>
+                ) : null}
               </div>
 
               {item.analiseIa ? (

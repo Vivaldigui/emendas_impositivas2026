@@ -563,6 +563,57 @@ export async function revisarVinculo(input: ReviewInput) {
   return dbVinculoToUi(updated, dbEmpenhoToRecord(updated.empenho));
 }
 
+/**
+ * Rejeita todas as sugestões pendentes (SUGERIDO/CONFERIR) de uma emenda numa
+ * única ação. Empenhos confirmados não são tocados. Os rejeitados não voltam a
+ * ser sugeridos (loadRejectedEmpenhoIds) e a emenda sai do estado "Conferir".
+ */
+export async function marcarEmendaSemEmpenho(input: {
+  emendaId: string;
+  revisadoPor: string;
+  justificativa?: string | null;
+}) {
+  const pendentes = await prisma.emendaEmpenhoVinculo.findMany({
+    where: {
+      emendaId: input.emendaId,
+      decisao: { in: ["SUGERIDO", "CONFERIR"] },
+    },
+    select: { id: true, empenhoId: true, decisao: true, valorAtribuido: true },
+  });
+
+  const justificativa =
+    input.justificativa?.trim() || "Marcada como sem empenho na revisão manual.";
+
+  await prisma.$transaction(async (tx) => {
+    for (const vinculo of pendentes) {
+      await tx.emendaEmpenhoVinculo.update({
+        where: { id: vinculo.id },
+        data: {
+          decisao: "REJEITADO",
+          revisadoEm: new Date(),
+          revisadoPor: input.revisadoPor,
+        },
+      });
+
+      await tx.emendaEmpenhoRevisao.create({
+        data: {
+          vinculoId: vinculo.id,
+          emendaId: input.emendaId,
+          empenhoId: vinculo.empenhoId,
+          situacaoAnterior: vinculo.decisao,
+          situacaoNova: "REJEITADO",
+          valorAnterior: decimalToNumber(vinculo.valorAtribuido),
+          valorNovo: null,
+          justificativa,
+          revisadoPor: input.revisadoPor,
+        },
+      });
+    }
+  });
+
+  return { emendaId: input.emendaId, rejeitadas: pendentes.length };
+}
+
 export async function getHistoricoRevisoes(filters: { emendaId?: string; vinculoId?: string }) {
   const [analises, revisoes] = await Promise.all([
     prisma.analiseIaEmenda.findMany({

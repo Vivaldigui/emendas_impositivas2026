@@ -44,7 +44,7 @@ A IA fica ativada em producao pelo `apphosting.yaml`:
 
 ```text
 OPENAI_EMPENHO_ENABLED=true
-OPENAI_EMPENHO_MODEL=gpt-4o-mini
+OPENAI_EMPENHO_MODEL=gpt-5.5
 ```
 
 Para desativar temporariamente, mude `OPENAI_EMPENHO_ENABLED` para

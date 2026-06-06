@@ -34,7 +34,7 @@ env:
       - BUILD
       - RUNTIME
   - variable: OPENAI_EMPENHO_MODEL
-    value: "gpt-4o-mini"
+    value: "gpt-5.5"
     availability:
       - BUILD
       - RUNTIME

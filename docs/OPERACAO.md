@@ -90,7 +90,7 @@ analises.
 
 ```text
 OPENAI_API_KEY=
-OPENAI_EMPENHO_MODEL=gpt-4o-mini
+OPENAI_EMPENHO_MODEL=gpt-5.5
 OPENAI_EMPENHO_ENABLED=true
 ```
 
@@ -102,6 +102,11 @@ OPENAI_EMPENHO_ENABLED=false
 
 Sem `OPENAI_API_KEY`, o app continua funcionando com o matcher deterministico e
 o painel mostra `Analise de IA indisponivel`.
+
+O painel `/admin` mostra uso estimado da IA por dia, mes e total registrado:
+tokens de entrada, tokens de saida e custo estimado em USD. O valor e calculado
+pelos tokens retornados pela API e deve ser conferido com a fatura real da
+OpenAI.
 
 ## Executar analise
 

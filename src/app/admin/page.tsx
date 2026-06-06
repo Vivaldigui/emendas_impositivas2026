@@ -11,6 +11,7 @@ import { EmendasExplorer } from "@/components/dashboard/emendas-explorer";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { getDashboardData } from "@/services/dashboardService";
+import { getIaUsageSummary } from "@/services/aiEmpenhoLinker";
 import { formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +23,10 @@ export const metadata = {
 };
 
 export default async function AdminPage() {
-  const data = await getDashboardData();
+  const [data, iaUsage] = await Promise.all([
+    getDashboardData(),
+    getIaUsageSummary(),
+  ]);
 
   return (
     <main className="mx-auto max-w-7xl space-y-6 px-4 py-5 sm:px-6 lg:px-8">
@@ -119,6 +123,12 @@ export default async function AdminPage() {
         </Card>
       </section>
 
+      <section className="grid gap-4 lg:grid-cols-3">
+        <UsageCard title="Hoje" usage={iaUsage.hoje} />
+        <UsageCard title="Este mês" usage={iaUsage.mes} />
+        <UsageCard title="Total registrado" usage={iaUsage.total} />
+      </section>
+
       {data.alertasAdmin.length ? (
         <section className="grid gap-3 lg:grid-cols-3">
           {data.alertasAdmin.map((alerta) => (
@@ -193,4 +203,49 @@ function logVariant(status: string) {
   if (status === "SUCESSO") return "green";
   if (status === "ERRO") return "red";
   return "amber";
+}
+
+function UsageCard({
+  title,
+  usage,
+}: {
+  title: string;
+  usage: Awaited<ReturnType<typeof getIaUsageSummary>>["hoje"];
+}) {
+  return (
+    <Card>
+      <CardContent className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-bold text-slate-950">Uso IA • {title}</h2>
+          <Badge variant="blue">{usage.modelo ?? "sem modelo"}</Badge>
+        </div>
+        <p className="text-2xl font-extrabold tracking-tight text-slate-950">
+          {formatUsd(usage.custoEstimadoUsd)}
+        </p>
+        <div className="grid gap-1 text-xs text-slate-600">
+          <span>Tokens totais: {formatInteger(usage.tokensTotal)}</span>
+          <span>Entrada: {formatInteger(usage.tokensEntrada)}</span>
+          <span>Entrada em cache: {formatInteger(usage.tokensEntradaCache)}</span>
+          <span>Saída: {formatInteger(usage.tokensSaida)}</span>
+        </div>
+        <p className="text-xs leading-5 text-slate-500">
+          Valor estimado por token retornado pela API. A cobrança real deve ser conferida na
+          conta OpenAI.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function formatUsd(value: number) {
+  return new Intl.NumberFormat("pt-BR", {
+    currency: "USD",
+    maximumFractionDigits: 4,
+    minimumFractionDigits: 4,
+    style: "currency",
+  }).format(value);
+}
+
+function formatInteger(value: number) {
+  return value.toLocaleString("pt-BR");
 }

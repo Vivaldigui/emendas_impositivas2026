@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import { Modal } from "@/components/ui/modal";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +34,39 @@ type ReviewModalState =
   | { type: "DESFAZER_CONFIRMACAO"; vinculo: EmendaResumo["vinculos"][number] }
   | { type: "ALTERAR_VALOR"; vinculo: EmendaResumo["vinculos"][number] }
   | null;
+
+type AnalysisProgress = {
+  current: number;
+  total: number;
+  label: string;
+  sugeridas: number;
+  conferir: number;
+  semVinculo: number;
+  reaproveitadas: number;
+  erros: number;
+  tokensTotal: number;
+  custoEstimadoUsd: number;
+};
+
+type AnalysisResumoPayload = Partial<{
+  analisadas: number;
+  sugeridas: number;
+  conferir: number;
+  semVinculo: number;
+  reaproveitadas: number;
+  erros: number;
+  tokensTotal: number;
+  custoEstimadoUsd: number;
+}>;
+
+type ApiPayload = {
+  ok?: boolean;
+  error?: string;
+  details?: AuthErrorDetails;
+  resumo?: AnalysisResumoPayload;
+  resultados?: Array<{ erro?: string }>;
+  vinculo?: EmendaResumo["vinculos"][number];
+};
 
 export function EmendasExplorer({
   emendas,
@@ -57,6 +90,8 @@ export function EmendasExplorer({
   const [adminValidated, setAdminValidated] = useState(false);
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [analysisProgress, setAnalysisProgress] = useState<AnalysisProgress | null>(null);
+  const analysisTotalsRef = useRef<Required<AnalysisResumoPayload>>(emptyAnalysisResumo());
   const [reviewModal, setReviewModal] = useState<ReviewModalState>(null);
   const [reviewJustificativa, setReviewJustificativa] = useState("");
   const [reviewValor, setReviewValor] = useState("");
@@ -176,7 +211,7 @@ export function EmendasExplorer({
           "x-admin-secret": adminSecret.trim(),
         },
       });
-      const payload = await response.json();
+      const payload = await readJsonResponse(response);
 
       if (!response.ok) {
         throw new Error(formatApiError(payload.error ?? "Falha ao validar segredo.", payload.details));
@@ -203,34 +238,80 @@ export function EmendasExplorer({
       return;
     }
 
+    const targets = options.emendaIds?.length
+      ? displayEmendas.filter((item) => options.emendaIds?.includes(item.id))
+      : displayEmendas;
+
+    if (!targets.length) {
+      setMessage("Nenhuma emenda encontrada para analisar.");
+      return;
+    }
+
     setBusyAction(options.emendaIds?.[0] ?? "all");
-    setMessage(
-      options.emendaIds?.length
-        ? "Analisando a emenda selecionada. Pode levar alguns segundos."
-        : "Analisando emendas pendentes. Pode levar alguns minutos.",
-    );
+    setAnalysisProgress({
+      current: 0,
+      total: targets.length,
+      label: "Preparando análise...",
+      sugeridas: 0,
+      conferir: 0,
+      semVinculo: 0,
+      reaproveitadas: 0,
+      erros: 0,
+      tokensTotal: 0,
+      custoEstimadoUsd: 0,
+    });
+    setMessage("Análise em andamento. Acompanhe o progresso abaixo.");
 
     try {
-      const response = await fetch("/api/admin/ia/vincular-empenhos", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "x-admin-secret": adminSecret.trim(),
-        },
-        body: JSON.stringify(options),
-      });
-      const payload = await response.json();
+      analysisTotalsRef.current = emptyAnalysisResumo();
 
-      if (!response.ok) {
-        throw new Error(formatApiError(payload.error ?? "Falha ao executar análise.", payload.details));
+      for (const [index, target] of targets.entries()) {
+        setAnalysisProgress((current) =>
+          current
+            ? {
+                ...current,
+                current: index,
+                label: `Analisando ${target.descricao}`,
+              }
+            : current,
+        );
+
+        const payload = await runAnalyzeRequest({
+          emendaIds: [target.id],
+          reanalisar: options.reanalisar,
+        });
+
+        if (payload.ok === false) {
+          throw new Error(formatBatchError(payload));
+        }
+
+        analysisTotalsRef.current = addAnalysisResumo(
+          analysisTotalsRef.current,
+          payload.resumo,
+        );
+        const resumo = analysisTotalsRef.current;
+
+        setAnalysisProgress((current) =>
+          current
+            ? {
+                ...current,
+                current: index + 1,
+                label: `${index + 1} de ${targets.length} concluída(s)`,
+                sugeridas: resumo.sugeridas,
+                conferir: resumo.conferir,
+                semVinculo: resumo.semVinculo,
+                reaproveitadas: resumo.reaproveitadas,
+                erros: resumo.erros,
+                tokensTotal: resumo.tokensTotal,
+                custoEstimadoUsd: resumo.custoEstimadoUsd,
+              }
+            : current,
+        );
       }
 
-      if (payload.ok === false) {
-        throw new Error(formatBatchError(payload));
-      }
-
+      const finalResumo = analysisTotalsRef.current;
       setMessage(
-        `Análise concluída: ${payload.resumo.analisadas} emenda(s), ${payload.resumo.sugeridas} sugestão(ões), ${payload.resumo.conferir} para conferir.`,
+        `Análise concluída: ${finalResumo.analisadas} emenda(s), ${finalResumo.sugeridas} sugestão(ões), ${finalResumo.conferir} para conferir. Custo estimado: ${formatUsd(finalResumo.custoEstimadoUsd)}.`,
       );
       router.refresh();
     } catch (error) {
@@ -238,6 +319,24 @@ export function EmendasExplorer({
     } finally {
       setBusyAction(null);
     }
+  }
+
+  async function runAnalyzeRequest(options: { emendaIds?: string[]; reanalisar?: boolean }) {
+    const response = await fetch("/api/admin/ia/vincular-empenhos", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-admin-secret": adminSecret.trim(),
+      },
+      body: JSON.stringify(options),
+    });
+    const payload = await readJsonResponse(response);
+
+    if (!response.ok) {
+      throw new Error(formatApiError(payload.error ?? "Falha ao executar análise.", payload.details));
+    }
+
+    return payload;
   }
 
   async function submitReview() {
@@ -290,7 +389,7 @@ export function EmendasExplorer({
         },
         body: JSON.stringify(body),
       });
-      const payload = await response.json();
+      const payload = await readJsonResponse(response);
 
       if (!response.ok) {
         throw new Error(formatApiError(payload.error ?? "Falha ao revisar vínculo.", payload.details));
@@ -415,6 +514,10 @@ export function EmendasExplorer({
           )}
           {message ? <span className="font-medium text-slate-800">{message}</span> : null}
         </div>
+
+        {analysisProgress ? (
+          <AnalysisProgressBar progress={analysisProgress} />
+        ) : null}
 
         <div className="space-y-3">
           {visibleRows.map((item) => (
@@ -734,6 +837,52 @@ function modalConfirmLabel(type?: NonNullable<ReviewModalState>["type"]) {
   return "OK";
 }
 
+function AnalysisProgressBar({ progress }: { progress: AnalysisProgress }) {
+  const percent = progress.total
+    ? Math.min(100, Math.round((progress.current / progress.total) * 100))
+    : 0;
+
+  return (
+    <div
+      aria-label="Progresso da análise por IA"
+      className="rounded-md border border-slate-200 bg-white p-3"
+      role="status"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+        <div>
+          <p className="font-semibold text-slate-950">
+            Análise por IA: {progress.current}/{progress.total}
+          </p>
+          <p className="mt-1 text-xs text-slate-600">{progress.label}</p>
+        </div>
+        <Badge variant={progress.current >= progress.total ? "green" : "blue"}>
+          {percent}%
+        </Badge>
+      </div>
+      <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-100">
+        <div
+          aria-hidden
+          className="h-full rounded-full bg-emerald-600 transition-all"
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+      <div className="mt-3 grid gap-2 text-xs text-slate-600 sm:grid-cols-3 lg:grid-cols-6">
+        <span>Sugestões: {progress.sugeridas}</span>
+        <span>Conferir: {progress.conferir}</span>
+        <span>Sem vínculo: {progress.semVinculo}</span>
+        <span>Cache: {progress.reaproveitadas}</span>
+        <span>Erros: {progress.erros}</span>
+        <span>Custo: {formatUsd(progress.custoEstimadoUsd)}</span>
+      </div>
+      {progress.tokensTotal ? (
+        <p className="mt-2 text-xs text-slate-500">
+          Tokens consumidos nesta execução: {progress.tokensTotal.toLocaleString("pt-BR")}.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 function SelectFilter({
   label,
   options,
@@ -1046,6 +1195,74 @@ function readNumber(value: unknown) {
 
 function formatOptionalCurrency(value: number | null) {
   return value === null ? "n/i" : formatCurrency(value);
+}
+
+function emptyAnalysisResumo(): Required<AnalysisResumoPayload> {
+  return {
+    analisadas: 0,
+    sugeridas: 0,
+    conferir: 0,
+    semVinculo: 0,
+    reaproveitadas: 0,
+    erros: 0,
+    tokensTotal: 0,
+    custoEstimadoUsd: 0,
+  };
+}
+
+function addAnalysisResumo<T extends Required<AnalysisResumoPayload>>(
+  current: T,
+  next?: AnalysisResumoPayload,
+) {
+  return {
+    analisadas: current.analisadas + (next?.analisadas ?? 0),
+    sugeridas: current.sugeridas + (next?.sugeridas ?? 0),
+    conferir: current.conferir + (next?.conferir ?? 0),
+    semVinculo: current.semVinculo + (next?.semVinculo ?? 0),
+    reaproveitadas: current.reaproveitadas + (next?.reaproveitadas ?? 0),
+    erros: current.erros + (next?.erros ?? 0),
+    tokensTotal: current.tokensTotal + (next?.tokensTotal ?? 0),
+    custoEstimadoUsd: current.custoEstimadoUsd + (next?.custoEstimadoUsd ?? 0),
+  } satisfies Required<AnalysisResumoPayload>;
+}
+
+async function readJsonResponse(response: Response): Promise<ApiPayload> {
+  const text = await response.text();
+
+  if (!text.trim()) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(text) as ApiPayload;
+  } catch {
+    return {
+      error: summarizeUnexpectedResponse(text, response.status),
+    };
+  }
+}
+
+function summarizeUnexpectedResponse(text: string, status: number) {
+  const cleaned = text
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 240);
+
+  return cleaned
+    ? `Resposta inesperada do servidor (${status}): ${cleaned}`
+    : `Resposta inesperada do servidor (${status}).`;
+}
+
+function formatUsd(value: number) {
+  return new Intl.NumberFormat("pt-BR", {
+    currency: "USD",
+    maximumFractionDigits: 4,
+    minimumFractionDigits: 4,
+    style: "currency",
+  }).format(value);
 }
 
 type AuthErrorDetails = {

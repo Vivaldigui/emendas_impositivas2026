@@ -28,10 +28,20 @@ export type AggregateAnaliseIaEmenda = {
 
 export type AnaliseIaEmendaAvgAggregateOutputType = {
   quantidadeCandidatos: number | null
+  tokensEntrada: number | null
+  tokensEntradaCache: number | null
+  tokensSaida: number | null
+  tokensTotal: number | null
+  custoEstimadoUsd: runtime.Decimal | null
 }
 
 export type AnaliseIaEmendaSumAggregateOutputType = {
   quantidadeCandidatos: number | null
+  tokensEntrada: number | null
+  tokensEntradaCache: number | null
+  tokensSaida: number | null
+  tokensTotal: number | null
+  custoEstimadoUsd: runtime.Decimal | null
 }
 
 export type AnaliseIaEmendaMinAggregateOutputType = {
@@ -45,6 +55,11 @@ export type AnaliseIaEmendaMinAggregateOutputType = {
   quantidadeCandidatos: number | null
   justificativa: string | null
   erro: string | null
+  tokensEntrada: number | null
+  tokensEntradaCache: number | null
+  tokensSaida: number | null
+  tokensTotal: number | null
+  custoEstimadoUsd: runtime.Decimal | null
 }
 
 export type AnaliseIaEmendaMaxAggregateOutputType = {
@@ -58,6 +73,11 @@ export type AnaliseIaEmendaMaxAggregateOutputType = {
   quantidadeCandidatos: number | null
   justificativa: string | null
   erro: string | null
+  tokensEntrada: number | null
+  tokensEntradaCache: number | null
+  tokensSaida: number | null
+  tokensTotal: number | null
+  custoEstimadoUsd: runtime.Decimal | null
 }
 
 export type AnaliseIaEmendaCountAggregateOutputType = {
@@ -71,16 +91,31 @@ export type AnaliseIaEmendaCountAggregateOutputType = {
   quantidadeCandidatos: number
   justificativa: number
   erro: number
+  tokensEntrada: number
+  tokensEntradaCache: number
+  tokensSaida: number
+  tokensTotal: number
+  custoEstimadoUsd: number
   _all: number
 }
 
 
 export type AnaliseIaEmendaAvgAggregateInputType = {
   quantidadeCandidatos?: true
+  tokensEntrada?: true
+  tokensEntradaCache?: true
+  tokensSaida?: true
+  tokensTotal?: true
+  custoEstimadoUsd?: true
 }
 
 export type AnaliseIaEmendaSumAggregateInputType = {
   quantidadeCandidatos?: true
+  tokensEntrada?: true
+  tokensEntradaCache?: true
+  tokensSaida?: true
+  tokensTotal?: true
+  custoEstimadoUsd?: true
 }
 
 export type AnaliseIaEmendaMinAggregateInputType = {
@@ -94,6 +129,11 @@ export type AnaliseIaEmendaMinAggregateInputType = {
   quantidadeCandidatos?: true
   justificativa?: true
   erro?: true
+  tokensEntrada?: true
+  tokensEntradaCache?: true
+  tokensSaida?: true
+  tokensTotal?: true
+  custoEstimadoUsd?: true
 }
 
 export type AnaliseIaEmendaMaxAggregateInputType = {
@@ -107,6 +147,11 @@ export type AnaliseIaEmendaMaxAggregateInputType = {
   quantidadeCandidatos?: true
   justificativa?: true
   erro?: true
+  tokensEntrada?: true
+  tokensEntradaCache?: true
+  tokensSaida?: true
+  tokensTotal?: true
+  custoEstimadoUsd?: true
 }
 
 export type AnaliseIaEmendaCountAggregateInputType = {
@@ -120,6 +165,11 @@ export type AnaliseIaEmendaCountAggregateInputType = {
   quantidadeCandidatos?: true
   justificativa?: true
   erro?: true
+  tokensEntrada?: true
+  tokensEntradaCache?: true
+  tokensSaida?: true
+  tokensTotal?: true
+  custoEstimadoUsd?: true
   _all?: true
 }
 
@@ -220,6 +270,11 @@ export type AnaliseIaEmendaGroupByOutputType = {
   quantidadeCandidatos: number
   justificativa: string | null
   erro: string | null
+  tokensEntrada: number | null
+  tokensEntradaCache: number | null
+  tokensSaida: number | null
+  tokensTotal: number | null
+  custoEstimadoUsd: runtime.Decimal | null
   _count: AnaliseIaEmendaCountAggregateOutputType | null
   _avg: AnaliseIaEmendaAvgAggregateOutputType | null
   _sum: AnaliseIaEmendaSumAggregateOutputType | null
@@ -256,6 +311,11 @@ export type AnaliseIaEmendaWhereInput = {
   quantidadeCandidatos?: Prisma.IntFilter<"AnaliseIaEmenda"> | number
   justificativa?: Prisma.StringNullableFilter<"AnaliseIaEmenda"> | string | null
   erro?: Prisma.StringNullableFilter<"AnaliseIaEmenda"> | string | null
+  tokensEntrada?: Prisma.IntNullableFilter<"AnaliseIaEmenda"> | number | null
+  tokensEntradaCache?: Prisma.IntNullableFilter<"AnaliseIaEmenda"> | number | null
+  tokensSaida?: Prisma.IntNullableFilter<"AnaliseIaEmenda"> | number | null
+  tokensTotal?: Prisma.IntNullableFilter<"AnaliseIaEmenda"> | number | null
+  custoEstimadoUsd?: Prisma.DecimalNullableFilter<"AnaliseIaEmenda"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   emenda?: Prisma.XOR<Prisma.EmendaScalarRelationFilter, Prisma.EmendaWhereInput>
 }
 
@@ -270,6 +330,11 @@ export type AnaliseIaEmendaOrderByWithRelationInput = {
   quantidadeCandidatos?: Prisma.SortOrder
   justificativa?: Prisma.SortOrderInput | Prisma.SortOrder
   erro?: Prisma.SortOrderInput | Prisma.SortOrder
+  tokensEntrada?: Prisma.SortOrderInput | Prisma.SortOrder
+  tokensEntradaCache?: Prisma.SortOrderInput | Prisma.SortOrder
+  tokensSaida?: Prisma.SortOrderInput | Prisma.SortOrder
+  tokensTotal?: Prisma.SortOrderInput | Prisma.SortOrder
+  custoEstimadoUsd?: Prisma.SortOrderInput | Prisma.SortOrder
   emenda?: Prisma.EmendaOrderByWithRelationInput
 }
 
@@ -288,6 +353,11 @@ export type AnaliseIaEmendaWhereUniqueInput = Prisma.AtLeast<{
   quantidadeCandidatos?: Prisma.IntFilter<"AnaliseIaEmenda"> | number
   justificativa?: Prisma.StringNullableFilter<"AnaliseIaEmenda"> | string | null
   erro?: Prisma.StringNullableFilter<"AnaliseIaEmenda"> | string | null
+  tokensEntrada?: Prisma.IntNullableFilter<"AnaliseIaEmenda"> | number | null
+  tokensEntradaCache?: Prisma.IntNullableFilter<"AnaliseIaEmenda"> | number | null
+  tokensSaida?: Prisma.IntNullableFilter<"AnaliseIaEmenda"> | number | null
+  tokensTotal?: Prisma.IntNullableFilter<"AnaliseIaEmenda"> | number | null
+  custoEstimadoUsd?: Prisma.DecimalNullableFilter<"AnaliseIaEmenda"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   emenda?: Prisma.XOR<Prisma.EmendaScalarRelationFilter, Prisma.EmendaWhereInput>
 }, "id" | "emendaId_inputHash">
 
@@ -302,6 +372,11 @@ export type AnaliseIaEmendaOrderByWithAggregationInput = {
   quantidadeCandidatos?: Prisma.SortOrder
   justificativa?: Prisma.SortOrderInput | Prisma.SortOrder
   erro?: Prisma.SortOrderInput | Prisma.SortOrder
+  tokensEntrada?: Prisma.SortOrderInput | Prisma.SortOrder
+  tokensEntradaCache?: Prisma.SortOrderInput | Prisma.SortOrder
+  tokensSaida?: Prisma.SortOrderInput | Prisma.SortOrder
+  tokensTotal?: Prisma.SortOrderInput | Prisma.SortOrder
+  custoEstimadoUsd?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.AnaliseIaEmendaCountOrderByAggregateInput
   _avg?: Prisma.AnaliseIaEmendaAvgOrderByAggregateInput
   _max?: Prisma.AnaliseIaEmendaMaxOrderByAggregateInput
@@ -323,6 +398,11 @@ export type AnaliseIaEmendaScalarWhereWithAggregatesInput = {
   quantidadeCandidatos?: Prisma.IntWithAggregatesFilter<"AnaliseIaEmenda"> | number
   justificativa?: Prisma.StringNullableWithAggregatesFilter<"AnaliseIaEmenda"> | string | null
   erro?: Prisma.StringNullableWithAggregatesFilter<"AnaliseIaEmenda"> | string | null
+  tokensEntrada?: Prisma.IntNullableWithAggregatesFilter<"AnaliseIaEmenda"> | number | null
+  tokensEntradaCache?: Prisma.IntNullableWithAggregatesFilter<"AnaliseIaEmenda"> | number | null
+  tokensSaida?: Prisma.IntNullableWithAggregatesFilter<"AnaliseIaEmenda"> | number | null
+  tokensTotal?: Prisma.IntNullableWithAggregatesFilter<"AnaliseIaEmenda"> | number | null
+  custoEstimadoUsd?: Prisma.DecimalNullableWithAggregatesFilter<"AnaliseIaEmenda"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type AnaliseIaEmendaCreateInput = {
@@ -335,6 +415,11 @@ export type AnaliseIaEmendaCreateInput = {
   quantidadeCandidatos: number
   justificativa?: string | null
   erro?: string | null
+  tokensEntrada?: number | null
+  tokensEntradaCache?: number | null
+  tokensSaida?: number | null
+  tokensTotal?: number | null
+  custoEstimadoUsd?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   emenda: Prisma.EmendaCreateNestedOneWithoutAnalisesIaInput
 }
 
@@ -349,6 +434,11 @@ export type AnaliseIaEmendaUncheckedCreateInput = {
   quantidadeCandidatos: number
   justificativa?: string | null
   erro?: string | null
+  tokensEntrada?: number | null
+  tokensEntradaCache?: number | null
+  tokensSaida?: number | null
+  tokensTotal?: number | null
+  custoEstimadoUsd?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type AnaliseIaEmendaUpdateInput = {
@@ -361,6 +451,11 @@ export type AnaliseIaEmendaUpdateInput = {
   quantidadeCandidatos?: Prisma.IntFieldUpdateOperationsInput | number
   justificativa?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   erro?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tokensEntrada?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  tokensEntradaCache?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  tokensSaida?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  tokensTotal?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  custoEstimadoUsd?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   emenda?: Prisma.EmendaUpdateOneRequiredWithoutAnalisesIaNestedInput
 }
 
@@ -375,6 +470,11 @@ export type AnaliseIaEmendaUncheckedUpdateInput = {
   quantidadeCandidatos?: Prisma.IntFieldUpdateOperationsInput | number
   justificativa?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   erro?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tokensEntrada?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  tokensEntradaCache?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  tokensSaida?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  tokensTotal?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  custoEstimadoUsd?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type AnaliseIaEmendaCreateManyInput = {
@@ -388,6 +488,11 @@ export type AnaliseIaEmendaCreateManyInput = {
   quantidadeCandidatos: number
   justificativa?: string | null
   erro?: string | null
+  tokensEntrada?: number | null
+  tokensEntradaCache?: number | null
+  tokensSaida?: number | null
+  tokensTotal?: number | null
+  custoEstimadoUsd?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type AnaliseIaEmendaUpdateManyMutationInput = {
@@ -400,6 +505,11 @@ export type AnaliseIaEmendaUpdateManyMutationInput = {
   quantidadeCandidatos?: Prisma.IntFieldUpdateOperationsInput | number
   justificativa?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   erro?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tokensEntrada?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  tokensEntradaCache?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  tokensSaida?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  tokensTotal?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  custoEstimadoUsd?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type AnaliseIaEmendaUncheckedUpdateManyInput = {
@@ -413,6 +523,11 @@ export type AnaliseIaEmendaUncheckedUpdateManyInput = {
   quantidadeCandidatos?: Prisma.IntFieldUpdateOperationsInput | number
   justificativa?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   erro?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tokensEntrada?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  tokensEntradaCache?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  tokensSaida?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  tokensTotal?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  custoEstimadoUsd?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type AnaliseIaEmendaListRelationFilter = {
@@ -441,10 +556,20 @@ export type AnaliseIaEmendaCountOrderByAggregateInput = {
   quantidadeCandidatos?: Prisma.SortOrder
   justificativa?: Prisma.SortOrder
   erro?: Prisma.SortOrder
+  tokensEntrada?: Prisma.SortOrder
+  tokensEntradaCache?: Prisma.SortOrder
+  tokensSaida?: Prisma.SortOrder
+  tokensTotal?: Prisma.SortOrder
+  custoEstimadoUsd?: Prisma.SortOrder
 }
 
 export type AnaliseIaEmendaAvgOrderByAggregateInput = {
   quantidadeCandidatos?: Prisma.SortOrder
+  tokensEntrada?: Prisma.SortOrder
+  tokensEntradaCache?: Prisma.SortOrder
+  tokensSaida?: Prisma.SortOrder
+  tokensTotal?: Prisma.SortOrder
+  custoEstimadoUsd?: Prisma.SortOrder
 }
 
 export type AnaliseIaEmendaMaxOrderByAggregateInput = {
@@ -458,6 +583,11 @@ export type AnaliseIaEmendaMaxOrderByAggregateInput = {
   quantidadeCandidatos?: Prisma.SortOrder
   justificativa?: Prisma.SortOrder
   erro?: Prisma.SortOrder
+  tokensEntrada?: Prisma.SortOrder
+  tokensEntradaCache?: Prisma.SortOrder
+  tokensSaida?: Prisma.SortOrder
+  tokensTotal?: Prisma.SortOrder
+  custoEstimadoUsd?: Prisma.SortOrder
 }
 
 export type AnaliseIaEmendaMinOrderByAggregateInput = {
@@ -471,10 +601,20 @@ export type AnaliseIaEmendaMinOrderByAggregateInput = {
   quantidadeCandidatos?: Prisma.SortOrder
   justificativa?: Prisma.SortOrder
   erro?: Prisma.SortOrder
+  tokensEntrada?: Prisma.SortOrder
+  tokensEntradaCache?: Prisma.SortOrder
+  tokensSaida?: Prisma.SortOrder
+  tokensTotal?: Prisma.SortOrder
+  custoEstimadoUsd?: Prisma.SortOrder
 }
 
 export type AnaliseIaEmendaSumOrderByAggregateInput = {
   quantidadeCandidatos?: Prisma.SortOrder
+  tokensEntrada?: Prisma.SortOrder
+  tokensEntradaCache?: Prisma.SortOrder
+  tokensSaida?: Prisma.SortOrder
+  tokensTotal?: Prisma.SortOrder
+  custoEstimadoUsd?: Prisma.SortOrder
 }
 
 export type AnaliseIaEmendaCreateNestedManyWithoutEmendaInput = {
@@ -519,6 +659,14 @@ export type AnaliseIaEmendaUncheckedUpdateManyWithoutEmendaNestedInput = {
   deleteMany?: Prisma.AnaliseIaEmendaScalarWhereInput | Prisma.AnaliseIaEmendaScalarWhereInput[]
 }
 
+export type NullableIntFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
+}
+
 export type AnaliseIaEmendaCreateWithoutEmendaInput = {
   id?: string
   resultadoGeral: string
@@ -529,6 +677,11 @@ export type AnaliseIaEmendaCreateWithoutEmendaInput = {
   quantidadeCandidatos: number
   justificativa?: string | null
   erro?: string | null
+  tokensEntrada?: number | null
+  tokensEntradaCache?: number | null
+  tokensSaida?: number | null
+  tokensTotal?: number | null
+  custoEstimadoUsd?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type AnaliseIaEmendaUncheckedCreateWithoutEmendaInput = {
@@ -541,6 +694,11 @@ export type AnaliseIaEmendaUncheckedCreateWithoutEmendaInput = {
   quantidadeCandidatos: number
   justificativa?: string | null
   erro?: string | null
+  tokensEntrada?: number | null
+  tokensEntradaCache?: number | null
+  tokensSaida?: number | null
+  tokensTotal?: number | null
+  custoEstimadoUsd?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type AnaliseIaEmendaCreateOrConnectWithoutEmendaInput = {
@@ -583,6 +741,11 @@ export type AnaliseIaEmendaScalarWhereInput = {
   quantidadeCandidatos?: Prisma.IntFilter<"AnaliseIaEmenda"> | number
   justificativa?: Prisma.StringNullableFilter<"AnaliseIaEmenda"> | string | null
   erro?: Prisma.StringNullableFilter<"AnaliseIaEmenda"> | string | null
+  tokensEntrada?: Prisma.IntNullableFilter<"AnaliseIaEmenda"> | number | null
+  tokensEntradaCache?: Prisma.IntNullableFilter<"AnaliseIaEmenda"> | number | null
+  tokensSaida?: Prisma.IntNullableFilter<"AnaliseIaEmenda"> | number | null
+  tokensTotal?: Prisma.IntNullableFilter<"AnaliseIaEmenda"> | number | null
+  custoEstimadoUsd?: Prisma.DecimalNullableFilter<"AnaliseIaEmenda"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type AnaliseIaEmendaCreateManyEmendaInput = {
@@ -595,6 +758,11 @@ export type AnaliseIaEmendaCreateManyEmendaInput = {
   quantidadeCandidatos: number
   justificativa?: string | null
   erro?: string | null
+  tokensEntrada?: number | null
+  tokensEntradaCache?: number | null
+  tokensSaida?: number | null
+  tokensTotal?: number | null
+  custoEstimadoUsd?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type AnaliseIaEmendaUpdateWithoutEmendaInput = {
@@ -607,6 +775,11 @@ export type AnaliseIaEmendaUpdateWithoutEmendaInput = {
   quantidadeCandidatos?: Prisma.IntFieldUpdateOperationsInput | number
   justificativa?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   erro?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tokensEntrada?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  tokensEntradaCache?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  tokensSaida?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  tokensTotal?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  custoEstimadoUsd?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type AnaliseIaEmendaUncheckedUpdateWithoutEmendaInput = {
@@ -619,6 +792,11 @@ export type AnaliseIaEmendaUncheckedUpdateWithoutEmendaInput = {
   quantidadeCandidatos?: Prisma.IntFieldUpdateOperationsInput | number
   justificativa?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   erro?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tokensEntrada?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  tokensEntradaCache?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  tokensSaida?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  tokensTotal?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  custoEstimadoUsd?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type AnaliseIaEmendaUncheckedUpdateManyWithoutEmendaInput = {
@@ -631,6 +809,11 @@ export type AnaliseIaEmendaUncheckedUpdateManyWithoutEmendaInput = {
   quantidadeCandidatos?: Prisma.IntFieldUpdateOperationsInput | number
   justificativa?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   erro?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tokensEntrada?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  tokensEntradaCache?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  tokensSaida?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  tokensTotal?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  custoEstimadoUsd?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 
@@ -646,6 +829,11 @@ export type AnaliseIaEmendaSelect<ExtArgs extends runtime.Types.Extensions.Inter
   quantidadeCandidatos?: boolean
   justificativa?: boolean
   erro?: boolean
+  tokensEntrada?: boolean
+  tokensEntradaCache?: boolean
+  tokensSaida?: boolean
+  tokensTotal?: boolean
+  custoEstimadoUsd?: boolean
   emenda?: boolean | Prisma.EmendaDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["analiseIaEmenda"]>
 
@@ -660,6 +848,11 @@ export type AnaliseIaEmendaSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   quantidadeCandidatos?: boolean
   justificativa?: boolean
   erro?: boolean
+  tokensEntrada?: boolean
+  tokensEntradaCache?: boolean
+  tokensSaida?: boolean
+  tokensTotal?: boolean
+  custoEstimadoUsd?: boolean
   emenda?: boolean | Prisma.EmendaDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["analiseIaEmenda"]>
 
@@ -674,6 +867,11 @@ export type AnaliseIaEmendaSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   quantidadeCandidatos?: boolean
   justificativa?: boolean
   erro?: boolean
+  tokensEntrada?: boolean
+  tokensEntradaCache?: boolean
+  tokensSaida?: boolean
+  tokensTotal?: boolean
+  custoEstimadoUsd?: boolean
   emenda?: boolean | Prisma.EmendaDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["analiseIaEmenda"]>
 
@@ -688,9 +886,14 @@ export type AnaliseIaEmendaSelectScalar = {
   quantidadeCandidatos?: boolean
   justificativa?: boolean
   erro?: boolean
+  tokensEntrada?: boolean
+  tokensEntradaCache?: boolean
+  tokensSaida?: boolean
+  tokensTotal?: boolean
+  custoEstimadoUsd?: boolean
 }
 
-export type AnaliseIaEmendaOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "emendaId" | "resultadoGeral" | "dataAnalise" | "modelo" | "promptVersion" | "inputHash" | "quantidadeCandidatos" | "justificativa" | "erro", ExtArgs["result"]["analiseIaEmenda"]>
+export type AnaliseIaEmendaOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "emendaId" | "resultadoGeral" | "dataAnalise" | "modelo" | "promptVersion" | "inputHash" | "quantidadeCandidatos" | "justificativa" | "erro" | "tokensEntrada" | "tokensEntradaCache" | "tokensSaida" | "tokensTotal" | "custoEstimadoUsd", ExtArgs["result"]["analiseIaEmenda"]>
 export type AnaliseIaEmendaInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   emenda?: boolean | Prisma.EmendaDefaultArgs<ExtArgs>
 }
@@ -717,6 +920,11 @@ export type $AnaliseIaEmendaPayload<ExtArgs extends runtime.Types.Extensions.Int
     quantidadeCandidatos: number
     justificativa: string | null
     erro: string | null
+    tokensEntrada: number | null
+    tokensEntradaCache: number | null
+    tokensSaida: number | null
+    tokensTotal: number | null
+    custoEstimadoUsd: runtime.Decimal | null
   }, ExtArgs["result"]["analiseIaEmenda"]>
   composites: {}
 }
@@ -1151,6 +1359,11 @@ export interface AnaliseIaEmendaFieldRefs {
   readonly quantidadeCandidatos: Prisma.FieldRef<"AnaliseIaEmenda", 'Int'>
   readonly justificativa: Prisma.FieldRef<"AnaliseIaEmenda", 'String'>
   readonly erro: Prisma.FieldRef<"AnaliseIaEmenda", 'String'>
+  readonly tokensEntrada: Prisma.FieldRef<"AnaliseIaEmenda", 'Int'>
+  readonly tokensEntradaCache: Prisma.FieldRef<"AnaliseIaEmenda", 'Int'>
+  readonly tokensSaida: Prisma.FieldRef<"AnaliseIaEmenda", 'Int'>
+  readonly tokensTotal: Prisma.FieldRef<"AnaliseIaEmenda", 'Int'>
+  readonly custoEstimadoUsd: Prisma.FieldRef<"AnaliseIaEmenda", 'Decimal'>
 }
     
 

@@ -97,6 +97,11 @@ export type AnaliseIaResumo = {
   quantidadeCandidatos: number;
   justificativa: string | null;
   erro: string | null;
+  tokensEntrada?: number | null;
+  tokensEntradaCache?: number | null;
+  tokensSaida?: number | null;
+  tokensTotal?: number | null;
+  custoEstimadoUsd?: number | null;
 };
 
 export type SituacaoEmenda =

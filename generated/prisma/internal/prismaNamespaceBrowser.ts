@@ -163,7 +163,12 @@ export const AnaliseIaEmendaScalarFieldEnum = {
   inputHash: 'inputHash',
   quantidadeCandidatos: 'quantidadeCandidatos',
   justificativa: 'justificativa',
-  erro: 'erro'
+  erro: 'erro',
+  tokensEntrada: 'tokensEntrada',
+  tokensEntradaCache: 'tokensEntradaCache',
+  tokensSaida: 'tokensSaida',
+  tokensTotal: 'tokensTotal',
+  custoEstimadoUsd: 'custoEstimadoUsd'
 } as const
 
 export type AnaliseIaEmendaScalarFieldEnum = (typeof AnaliseIaEmendaScalarFieldEnum)[keyof typeof AnaliseIaEmendaScalarFieldEnum]

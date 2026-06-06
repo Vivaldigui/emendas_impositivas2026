@@ -105,10 +105,16 @@ model AnaliseIaEmenda {
   quantidadeCandidatos Int
   justificativa        String?  @db.Text
   erro                 String?  @db.Text
+  tokensEntrada        Int?
+  tokensEntradaCache   Int?
+  tokensSaida          Int?
+  tokensTotal          Int?
+  custoEstimadoUsd     Decimal? @db.Decimal(12, 6)
 
   @@unique([emendaId, inputHash])
   @@index([resultadoGeral])
   @@index([dataAnalise])
+  @@index([modelo, dataAnalise])
 }
 
 model EmendaEmpenhoRevisao {

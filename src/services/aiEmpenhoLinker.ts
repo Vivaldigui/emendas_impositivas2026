@@ -26,11 +26,20 @@ import { prisma } from "../../lib/prisma";
 export const AI_PROMPT_VERSION = "empenho-linker-v1";
 const MANDATORY_PROMPT_RULE =
   "Não invente vínculos financeiros. Analise somente os empenhos candidatos fornecidos. Quando houver qualquer dúvida relevante, retorne CONFERIR. Quando nenhum candidato apresentar evidências suficientes, retorne SEM_VINCULO. Nunca trate semelhança de valor, isoladamente, como prova de vínculo.";
-const DEFAULT_MODEL = "gpt-4o-mini";
+const DEFAULT_MODEL = "gpt-5.5";
 const MAX_CANDIDATES = 5;
 const DEFAULT_CONCURRENCY = 1;
 const OPENAI_TIMEOUT_MS = 25_000;
 const OPENAI_MAX_RETRIES = 3;
+const MODEL_PRICES_USD_PER_1M: Record<
+  string,
+  { input: number; cachedInput: number; output: number }
+> = {
+  "gpt-5.5": { input: 5, cachedInput: 0.5, output: 30 },
+  "gpt-5.4": { input: 2.5, cachedInput: 0.25, output: 15 },
+  "gpt-5.4-mini": { input: 0.75, cachedInput: 0.075, output: 4.5 },
+  "gpt-4o-mini": { input: 0.15, cachedInput: 0.075, output: 0.6 },
+};
 
 const AiEmpenhoLinkResultSchema = z.object({
   emendaId: z.string(),
@@ -61,6 +70,15 @@ export type AnalyzeBatchOptions = {
   openAiClient?: Pick<OpenAI, "responses">;
 };
 
+export type AiUsageResumo = {
+  modelo: string | null;
+  tokensEntrada: number;
+  tokensEntradaCache: number;
+  tokensSaida: number;
+  tokensTotal: number;
+  custoEstimadoUsd: number;
+};
+
 export type AnalyzeOneResult = {
   emendaId: string;
   status: "SUGERIDO" | "CONFERIR" | "SEM_VINCULO" | "REAPROVEITADO" | "ERRO";
@@ -70,6 +88,7 @@ export type AnalyzeOneResult = {
   analise: AnaliseIaResumo | null;
   erro?: string;
   iaDisponivel: boolean;
+  uso: AiUsageResumo | null;
 };
 
 export type AnalyzeBatchResult = {
@@ -83,6 +102,11 @@ export type AnalyzeBatchResult = {
     semVinculo: number;
     reaproveitadas: number;
     erros: number;
+    tokensEntrada: number;
+    tokensEntradaCache: number;
+    tokensSaida: number;
+    tokensTotal: number;
+    custoEstimadoUsd: number;
   };
   resultados: AnalyzeOneResult[];
 };
@@ -131,6 +155,7 @@ export async function analisarVinculosEmendas(
         openAiClient: options.openAiClient,
       }),
   );
+  const uso = summarizeUsage(results.map((result) => result.uso).filter(Boolean));
 
   return {
     ok: results.every((result) => result.status !== "ERRO"),
@@ -143,6 +168,11 @@ export async function analisarVinculosEmendas(
       semVinculo: results.filter((result) => result.status === "SEM_VINCULO").length,
       reaproveitadas: results.filter((result) => result.status === "REAPROVEITADO").length,
       erros: results.filter((result) => result.status === "ERRO").length,
+      tokensEntrada: uso.tokensEntrada,
+      tokensEntradaCache: uso.tokensEntradaCache,
+      tokensSaida: uso.tokensSaida,
+      tokensTotal: uso.tokensTotal,
+      custoEstimadoUsd: uso.custoEstimadoUsd,
     },
     resultados: results,
   };
@@ -208,6 +238,7 @@ export async function analisarUmaEmenda(
         vinculos: [],
         analise: toAnaliseResumo(existing),
         iaDisponivel,
+        uso: null,
       };
     }
 
@@ -243,6 +274,7 @@ export async function analisarUmaEmenda(
           vinculos: [],
           analise: toAnaliseResumo(saved),
           iaDisponivel,
+          uso: null,
         };
       }
 
@@ -254,13 +286,14 @@ export async function analisarUmaEmenda(
         vinculos: [],
         analise,
         iaDisponivel,
+        uso: null,
       };
     }
 
-    const aiResult = iaDisponivel
+    const aiResponse = iaDisponivel
       ? await callOpenAiForEmenda(payload, options.openAiClient)
-      : fallbackDeterministico(emenda.id, candidatos);
-    const sanitized = validateAiResult(aiResult, emenda, candidatos);
+      : { result: fallbackDeterministico(emenda.id, candidatos), uso: null };
+    const sanitized = validateAiResult(aiResponse.result, emenda, candidatos);
 
     if (options.dryRun) {
       return {
@@ -282,8 +315,10 @@ export async function analisarUmaEmenda(
           quantidadeCandidatos: candidatos.length,
           justificativa: sanitized.justificativaGeral,
           erro: null,
+          uso: aiResponse.uso,
         }),
         iaDisponivel,
+        uso: aiResponse.uso,
       };
     }
 
@@ -295,6 +330,7 @@ export async function analisarUmaEmenda(
       quantidadeCandidatos: candidatos.length,
       justificativa: sanitized.justificativaGeral,
       erro: null,
+      uso: aiResponse.uso,
     });
     const persisted = await persistVinculosFromAnalysis({
       emenda,
@@ -313,6 +349,7 @@ export async function analisarUmaEmenda(
       vinculos: persisted,
       analise: toAnaliseResumo(analise),
       iaDisponivel,
+      uso: aiResponse.uso,
     };
   } catch (error) {
     const message = humanizeOpenAiError(error);
@@ -338,6 +375,7 @@ export async function analisarUmaEmenda(
       analise: null,
       erro: message,
       iaDisponivel,
+      uso: null,
     };
   }
 }
@@ -546,6 +584,44 @@ export async function getHistoricoRevisoes(filters: { emendaId?: string; vinculo
   };
 }
 
+export async function getIaUsageSummary() {
+  const now = new Date();
+  const todayStart = new Date(now);
+  todayStart.setHours(0, 0, 0, 0);
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const rows = await prisma.analiseIaEmenda.findMany({
+    where: {
+      tokensTotal: { not: null },
+    },
+    select: {
+      dataAnalise: true,
+      modelo: true,
+      tokensEntrada: true,
+      tokensEntradaCache: true,
+      tokensSaida: true,
+      tokensTotal: true,
+      custoEstimadoUsd: true,
+    },
+    orderBy: { dataAnalise: "desc" },
+  });
+  const all = rows.map((row) => ({
+    modelo: row.modelo,
+    tokensEntrada: row.tokensEntrada ?? 0,
+    tokensEntradaCache: row.tokensEntradaCache ?? 0,
+    tokensSaida: row.tokensSaida ?? 0,
+    tokensTotal: row.tokensTotal ?? 0,
+    custoEstimadoUsd: decimalToNumber(row.custoEstimadoUsd) ?? 0,
+    dataAnalise: row.dataAnalise,
+  }));
+
+  return {
+    hoje: summarizeUsage(all.filter((row) => row.dataAnalise >= todayStart)),
+    mes: summarizeUsage(all.filter((row) => row.dataAnalise >= monthStart)),
+    total: summarizeUsage(all),
+    ultimaAnalise: all[0]?.dataAnalise.toISOString() ?? null,
+  };
+}
+
 async function callOpenAiForEmenda(
   payload: ReturnType<typeof buildAiPayload>,
   injectedClient?: Pick<OpenAI, "responses">,
@@ -572,7 +648,92 @@ async function callOpenAiForEmenda(
     throw new Error("Resposta da IA nao contem resultado estruturado.");
   }
 
-  return response.output_parsed;
+  return {
+    result: response.output_parsed,
+    uso: extractOpenAiUsage(response, model),
+  };
+}
+
+function extractOpenAiUsage(response: unknown, model: string): AiUsageResumo | null {
+  const usage = readRecord(readRecord(response).usage);
+  const inputTokens = readNumberField(usage, ["input_tokens", "inputTokens"]);
+  const outputTokens = readNumberField(usage, ["output_tokens", "outputTokens"]);
+  const totalTokens =
+    readNumberField(usage, ["total_tokens", "totalTokens"]) ?? inputTokens + outputTokens;
+  const details = readRecord(
+    usage.input_tokens_details ?? usage.inputTokensDetails ?? usage.input_details,
+  );
+  const cachedInputTokens = readNumberField(details, ["cached_tokens", "cachedTokens"]);
+
+  if (!inputTokens && !outputTokens && !totalTokens) {
+    return null;
+  }
+
+  return buildUsageResumo({
+    modelo: model,
+    tokensEntrada: inputTokens,
+    tokensEntradaCache: cachedInputTokens,
+    tokensSaida: outputTokens,
+    tokensTotal: totalTokens,
+  });
+}
+
+function buildUsageResumo(input: Omit<AiUsageResumo, "custoEstimadoUsd">) {
+  return {
+    ...input,
+    custoEstimadoUsd: estimateOpenAiCostUsd(input),
+  } satisfies AiUsageResumo;
+}
+
+function summarizeUsage(rows: Array<AiUsageResumo | null | undefined>) {
+  const validRows = rows.filter((row): row is AiUsageResumo => Boolean(row));
+  return {
+    modelo: validRows[0]?.modelo ?? null,
+    tokensEntrada: sumNumbers(validRows, (row) => row.tokensEntrada),
+    tokensEntradaCache: sumNumbers(validRows, (row) => row.tokensEntradaCache),
+    tokensSaida: sumNumbers(validRows, (row) => row.tokensSaida),
+    tokensTotal: sumNumbers(validRows, (row) => row.tokensTotal),
+    custoEstimadoUsd: Number(
+      sumNumbers(validRows, (row) => row.custoEstimadoUsd).toFixed(6),
+    ),
+  } satisfies AiUsageResumo;
+}
+
+function estimateOpenAiCostUsd(usage: Omit<AiUsageResumo, "custoEstimadoUsd">) {
+  const prices = MODEL_PRICES_USD_PER_1M[usage.modelo ?? ""] ?? null;
+
+  if (!prices) {
+    return 0;
+  }
+
+  const cached = Math.min(usage.tokensEntradaCache, usage.tokensEntrada);
+  const uncachedInput = Math.max(0, usage.tokensEntrada - cached);
+  const cost =
+    (uncachedInput * prices.input +
+      cached * prices.cachedInput +
+      usage.tokensSaida * prices.output) /
+    1_000_000;
+
+  return Number(cost.toFixed(6));
+}
+
+function readRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+}
+
+function readNumberField(record: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const value = Number(record[key]);
+    if (Number.isFinite(value)) {
+      return value;
+    }
+  }
+
+  return 0;
+}
+
+function sumNumbers<T>(rows: T[], getter: (row: T) => number) {
+  return rows.reduce((total, row) => total + getter(row), 0);
 }
 
 function buildSystemPrompt() {
@@ -723,6 +884,7 @@ async function persistAnalise(input: {
   quantidadeCandidatos: number;
   justificativa: string | null;
   erro: string | null;
+  uso?: AiUsageResumo | null;
 }) {
   return prisma.analiseIaEmenda.upsert({
     where: { emendaId_inputHash: { emendaId: input.emendaId, inputHash: input.inputHash } },
@@ -735,6 +897,11 @@ async function persistAnalise(input: {
       quantidadeCandidatos: input.quantidadeCandidatos,
       justificativa: input.justificativa,
       erro: input.erro,
+      tokensEntrada: input.uso?.tokensEntrada ?? null,
+      tokensEntradaCache: input.uso?.tokensEntradaCache ?? null,
+      tokensSaida: input.uso?.tokensSaida ?? null,
+      tokensTotal: input.uso?.tokensTotal ?? null,
+      custoEstimadoUsd: input.uso?.custoEstimadoUsd ?? null,
     },
     update: {
       resultadoGeral: input.resultadoGeral,
@@ -743,6 +910,11 @@ async function persistAnalise(input: {
       quantidadeCandidatos: input.quantidadeCandidatos,
       justificativa: input.justificativa,
       erro: input.erro,
+      tokensEntrada: input.uso?.tokensEntrada ?? undefined,
+      tokensEntradaCache: input.uso?.tokensEntradaCache ?? undefined,
+      tokensSaida: input.uso?.tokensSaida ?? undefined,
+      tokensTotal: input.uso?.tokensTotal ?? undefined,
+      custoEstimadoUsd: input.uso?.custoEstimadoUsd ?? undefined,
     },
   });
 }
@@ -1179,10 +1351,16 @@ function toAnaliseResumo(analise: {
   quantidadeCandidatos: number;
   justificativa: string | null;
   erro: string | null;
+  tokensEntrada?: number | null;
+  tokensEntradaCache?: number | null;
+  tokensSaida?: number | null;
+  tokensTotal?: number | null;
+  custoEstimadoUsd?: unknown;
 }): AnaliseIaResumo {
   return buildAnaliseResumo({
     ...analise,
     resultadoGeral: analise.resultadoGeral as ResultadoAnaliseIa,
+    custoEstimadoUsd: decimalToNumber(analise.custoEstimadoUsd) ?? null,
   });
 }
 
@@ -1197,10 +1375,30 @@ function buildAnaliseResumo(analise: {
   quantidadeCandidatos: number;
   justificativa: string | null;
   erro: string | null;
+  uso?: AiUsageResumo | null;
+  tokensEntrada?: number | null;
+  tokensEntradaCache?: number | null;
+  tokensSaida?: number | null;
+  tokensTotal?: number | null;
+  custoEstimadoUsd?: number | null;
 }): AnaliseIaResumo {
+  const uso = analise.uso;
   return {
-    ...analise,
+    id: analise.id,
+    emendaId: analise.emendaId,
+    resultadoGeral: analise.resultadoGeral,
     dataAnalise: analise.dataAnalise.toISOString(),
+    modelo: analise.modelo,
+    promptVersion: analise.promptVersion,
+    inputHash: analise.inputHash,
+    quantidadeCandidatos: analise.quantidadeCandidatos,
+    justificativa: analise.justificativa,
+    erro: analise.erro,
+    tokensEntrada: uso?.tokensEntrada ?? analise.tokensEntrada ?? null,
+    tokensEntradaCache: uso?.tokensEntradaCache ?? analise.tokensEntradaCache ?? null,
+    tokensSaida: uso?.tokensSaida ?? analise.tokensSaida ?? null,
+    tokensTotal: uso?.tokensTotal ?? analise.tokensTotal ?? null,
+    custoEstimadoUsd: uso?.custoEstimadoUsd ?? analise.custoEstimadoUsd ?? null,
   };
 }
 

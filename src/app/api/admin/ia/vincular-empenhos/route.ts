@@ -39,18 +39,28 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const result = await analisarVinculosEmendas({
-    emendaIds: parsed.data.emendaIds,
-    reanalisar: parsed.data.reanalisar,
-    dryRun: parsed.data.dryRun,
-  });
+  try {
+    const result = await analisarVinculosEmendas({
+      emendaIds: parsed.data.emendaIds,
+      reanalisar: parsed.data.reanalisar,
+      dryRun: parsed.data.dryRun,
+    });
 
-  if (!parsed.data.dryRun) {
-    invalidateDashboardCache();
+    if (!parsed.data.dryRun) {
+      invalidateDashboardCache();
+    }
+
+    return NextResponse.json({
+      ...result,
+      solicitadoPor: admin.id,
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: error instanceof Error ? error.message : "Falha ao executar analise.",
+      },
+      { status: 500 },
+    );
   }
-
-  return NextResponse.json({
-    ...result,
-    solicitadoPor: admin.id,
-  });
 }

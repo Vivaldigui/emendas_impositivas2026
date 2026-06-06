@@ -1,5 +1,7 @@
 import type { NextRequest } from "next/server";
 
+import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
+
 export type AdminUser = {
   id: string;
   nome: string;
@@ -45,20 +47,31 @@ export function getAdminAuthStatus(request: NextRequest): AdminAuthStatus {
   };
 }
 
+/**
+ * Autoriza um request admin. Ordem de preferência:
+ * 1. Cookie de sessão (login pela interface) — caminho principal.
+ * 2. Segredo via header (cron, CLI e scripts server-to-server).
+ * 3. Fallback de desenvolvimento local sem segredo configurado.
+ */
 export function getAuthorizedAdmin(request: NextRequest): AdminUser | null {
-  const auth = getAdminAuthStatus(request);
-
-  if (auth.localFallback) {
-    return {
-      id: request.headers.get("x-admin-user") || "dev-admin",
-      nome: request.headers.get("x-admin-user") || "Administrador local",
-    };
+  const sessionUser = verifySessionToken(request.cookies.get(SESSION_COOKIE)?.value);
+  if (sessionUser) {
+    return sessionUser;
   }
+
+  const auth = getAdminAuthStatus(request);
 
   if (auth.authorized) {
     return {
       id: request.headers.get("x-admin-user") || "admin",
       nome: request.headers.get("x-admin-user") || "Administrador",
+    };
+  }
+
+  if (auth.localFallback) {
+    return {
+      id: request.headers.get("x-admin-user") || "dev-admin",
+      nome: request.headers.get("x-admin-user") || "Administrador local",
     };
   }
 

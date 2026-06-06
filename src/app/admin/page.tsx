@@ -2,27 +2,39 @@ import {
   AlertTriangle,
   ArrowLeft,
   BrainCircuit,
-  CalendarClock,
   Database,
+  DownloadCloud,
 } from "lucide-react";
+import { cookies } from "next/headers";
 import Link from "next/link";
 
+import { AdminLogin } from "@/components/admin/admin-login";
+import { CollectButton } from "@/components/admin/collect-button";
+import { LogoutButton } from "@/components/admin/logout-button";
 import { EmendasExplorer } from "@/components/dashboard/emendas-explorer";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { getDashboardData } from "@/services/dashboardService";
 import { getIaUsageSummary } from "@/services/aiEmpenhoLinker";
+import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 import { formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Painel administrativo • Emendas Itanhandu",
-  description: "Revisão de vínculos, status da IA e operação da coleta diária.",
+  description: "Revisão de vínculos, status da IA e operação da coleta de empenhos.",
   robots: { index: false, follow: false },
 };
 
 export default async function AdminPage() {
+  const cookieStore = await cookies();
+  const admin = verifySessionToken(cookieStore.get(SESSION_COOKIE)?.value);
+
+  if (!admin) {
+    return <AdminLogin />;
+  }
+
   const [data, iaUsage] = await Promise.all([
     getDashboardData(),
     getIaUsageSummary(),
@@ -38,7 +50,7 @@ export default async function AdminPage() {
           <ArrowLeft className="h-4 w-4" aria-hidden />
           Voltar ao painel público
         </Link>
-        <Badge variant="amber">Acesso restrito</Badge>
+        <LogoutButton nome={admin.nome} />
       </div>
 
       <header className="space-y-2">
@@ -46,8 +58,8 @@ export default async function AdminPage() {
           Painel administrativo
         </h1>
         <p className="max-w-3xl text-sm leading-6 text-slate-600">
-          Revisão de vínculos sugeridos pela IA, status da coleta diária e ações
-          operacionais. Requer o segredo administrativo para gravar qualquer alteração.
+          Revisão de vínculos sugeridos pela IA e operação da coleta de empenhos.
+          Suas ações ficam registradas em auditoria com o seu nome.
         </p>
       </header>
 
@@ -56,15 +68,19 @@ export default async function AdminPage() {
           <CardContent className="space-y-3">
             <div className="flex items-start gap-3">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-emerald-50 text-emerald-800">
-                <CalendarClock className="h-5 w-5" aria-hidden />
+                <DownloadCloud className="h-5 w-5" aria-hidden />
               </span>
               <div>
-                <h2 className="font-bold text-slate-950">Coleta diária</h2>
+                <h2 className="font-bold text-slate-950">Coleta de empenhos</h2>
                 <p className="mt-1 text-sm leading-6 text-slate-600">
-                  Agendada para 07:00 (BRT). Consulta 01/01/2026 até o dia atual.
+                  Coleta manual sob demanda (01/01/2026 até hoje). A coleta automática
+                  está desativada para evitar custos.
                 </p>
               </div>
             </div>
+
+            <CollectButton />
+
             <div className="rounded-md bg-slate-50 p-3 text-sm text-slate-700">
               <p>
                 <strong>Última coleta:</strong>{" "}
@@ -157,8 +173,8 @@ export default async function AdminPage() {
       <section className="space-y-3">
         <h2 className="text-lg font-bold text-slate-950">Explorer com revisão</h2>
         <p className="text-sm leading-6 text-slate-600">
-          Cole o segredo administrativo no campo abaixo para liberar Confirmar,
-          Rejeitar e Editar valor em cada vínculo sugerido.
+          Você está autenticado — as ações de Confirmar, Rejeitar, Editar valor e
+          Analisar por IA já estão liberadas.
         </p>
         <EmendasExplorer
           emendas={data.emendas}

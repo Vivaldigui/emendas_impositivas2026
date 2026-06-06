@@ -86,8 +86,6 @@ export function EmendasExplorer({
   const [area, setArea] = useState("");
   const [situacao, setSituacao] = useState("");
   const [visibleCount, setVisibleCount] = useState(18);
-  const [adminSecret, setAdminSecret] = useState("");
-  const [adminValidated, setAdminValidated] = useState(false);
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [analysisProgress, setAnalysisProgress] = useState<AnalysisProgress | null>(null);
@@ -154,11 +152,6 @@ export function EmendasExplorer({
 
   const visibleRows = filtered.slice(0, visibleCount);
 
-  function handleAdminSecretChange(value: string) {
-    setAdminSecret(value);
-    setAdminValidated(false);
-  }
-
   function openReviewModal(
     vinculo: EmendaResumo["vinculos"][number],
     type: NonNullable<ReviewModalState>["type"],
@@ -194,50 +187,7 @@ export function EmendasExplorer({
     }));
   }
 
-  async function validateAdminSecret() {
-    if (!adminSecret.trim()) {
-      setMessage("Informe o segredo admin antes de validar.");
-      return;
-    }
-
-    setBusyAction("auth");
-    setMessage("Validando segredo admin...");
-
-    try {
-      const response = await fetch("/api/admin/validar-segredo", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "x-admin-secret": adminSecret.trim(),
-        },
-      });
-      const payload = await readJsonResponse(response);
-
-      if (!response.ok) {
-        throw new Error(formatApiError(payload.error ?? "Falha ao validar segredo.", payload.details));
-      }
-
-      setAdminValidated(true);
-      setMessage("Segredo admin validado. Agora voce pode iniciar a analise.");
-    } catch (error) {
-      setAdminValidated(false);
-      setMessage(error instanceof Error ? error.message : "Falha ao validar segredo.");
-    } finally {
-      setBusyAction(null);
-    }
-  }
-
   async function analyze(options: { emendaIds?: string[]; reanalisar?: boolean }) {
-    if (!adminSecret.trim()) {
-      setMessage("Informe o segredo admin antes de executar a análise por IA.");
-      return;
-    }
-
-    if (!adminValidated) {
-      setMessage("Valide o segredo admin antes de iniciar a analise por IA.");
-      return;
-    }
-
     const targets = options.emendaIds?.length
       ? displayEmendas.filter((item) => options.emendaIds?.includes(item.id))
       : displayEmendas;
@@ -326,7 +276,6 @@ export function EmendasExplorer({
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "x-admin-secret": adminSecret.trim(),
       },
       body: JSON.stringify(options),
     });
@@ -372,11 +321,6 @@ export function EmendasExplorer({
       body.permitirExcedente = reviewPermitirExcedente;
     }
 
-    if (!adminSecret.trim()) {
-      setMessage("Informe o segredo admin antes de revisar vínculos.");
-      return;
-    }
-
     setBusyAction(vinculo.id ?? "review");
     setMessage(null);
 
@@ -385,7 +329,6 @@ export function EmendasExplorer({
         method: "POST",
         headers: {
           "content-type": "application/json",
-          "x-admin-secret": adminSecret.trim(),
         },
         body: JSON.stringify(body),
       });
@@ -463,38 +406,15 @@ export function EmendasExplorer({
             />
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto] xl:w-[42rem]">
-            <label>
-              <span className="sr-only">Segredo admin</span>
-              <input
-                className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:border-emerald-600"
-                onChange={(event) => handleAdminSecretChange(event.target.value)}
-                placeholder="Segredo admin para revisar"
-                type="password"
-                value={adminSecret}
-              />
-            </label>
+          <div className="flex items-start">
             <Button
-              disabled={busyAction !== null || !adminSecret.trim()}
-              onClick={validateAdminSecret}
-              type="button"
-              variant={adminValidated ? "primary" : "secondary"}
-            >
-              <ShieldCheck className="h-4 w-4" aria-hidden />
-              {busyAction === "auth"
-                ? "Validando..."
-                : adminValidated
-                  ? "Validado"
-                  : "Validar segredo"}
-            </Button>
-            <Button
-              disabled={busyAction !== null || !adminValidated}
+              disabled={busyAction !== null}
               onClick={() => analyze({})}
               type="button"
-              variant="secondary"
+              variant="primary"
             >
               <BrainCircuit className="h-4 w-4" aria-hidden />
-              {busyAction === "all" ? "Analisando..." : "Analisar pendentes"}
+              {busyAction === "all" ? "Analisando..." : "Analisar pendentes com IA"}
             </Button>
           </div>
         </div>
@@ -507,11 +427,6 @@ export function EmendasExplorer({
             <Badge variant="amber">Análise de IA indisponível</Badge>
           )}
           {!ia.enabled ? <Badge variant="neutral">IA desativada</Badge> : null}
-          {adminValidated ? (
-            <Badge variant="green">Segredo admin validado</Badge>
-          ) : (
-            <Badge variant="neutral">Valide o segredo admin</Badge>
-          )}
           {message ? <span className="font-medium text-slate-800">{message}</span> : null}
         </div>
 
@@ -566,7 +481,7 @@ export function EmendasExplorer({
                   Abrir página pública
                 </Link>
                 <Button
-                  disabled={busyAction !== null || !adminValidated}
+                  disabled={busyAction !== null}
                   onClick={() => analyze({ emendaIds: [item.id], reanalisar: true })}
                   type="button"
                   variant="secondary"

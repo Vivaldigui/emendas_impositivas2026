@@ -10,12 +10,14 @@ import Link from "next/link";
 
 import { AdminLogin } from "@/components/admin/admin-login";
 import { CollectButton } from "@/components/admin/collect-button";
+import { ImportLicitacoes } from "@/components/admin/import-licitacoes";
 import { LogoutButton } from "@/components/admin/logout-button";
 import { EmendasExplorer } from "@/components/dashboard/emendas-explorer";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { getDashboardData } from "@/services/dashboardService";
 import { getIaUsageSummary } from "@/services/aiEmpenhoLinker";
+import { contarLicitacoes } from "@/services/licitacoesStorage";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 import { formatDate } from "@/lib/utils";
 
@@ -35,9 +37,10 @@ export default async function AdminPage() {
     return <AdminLogin />;
   }
 
-  const [data, iaUsage] = await Promise.all([
+  const [data, iaUsage, totalLicitacoes] = await Promise.all([
     getDashboardData(),
     getIaUsageSummary(),
+    contarLicitacoes(),
   ]);
 
   return (
@@ -80,6 +83,10 @@ export default async function AdminPage() {
             </div>
 
             <CollectButton />
+
+            <div className="border-t border-slate-100 pt-3">
+              <ImportLicitacoes total={totalLicitacoes} />
+            </div>
 
             <div className="rounded-md bg-slate-50 p-3 text-sm text-slate-700">
               <p>

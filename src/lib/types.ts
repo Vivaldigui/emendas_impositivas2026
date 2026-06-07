@@ -49,6 +49,29 @@ export type EmpenhoRecord = {
   fonte: string;
   hashArquivo?: string | null;
   linhaBruta?: Record<string, unknown>;
+  // Objeto da licitacao vinculada pelo processoCompra (enriquecimento).
+  objetoLicitacao?: string | null;
+};
+
+export type LicitacaoRecord = {
+  id: string;
+  ano: number;
+  numero: number;
+  licitacao: string | null;
+  modalidade: string | null;
+  processoCompra: number | null;
+  objeto: string | null;
+  situacao: string | null;
+  criterio: string | null;
+  orgaoResp: string | null;
+  valorEstimado: number;
+  valorHomologado: number;
+  razaoFornecedor: string | null;
+  justificativa: string | null;
+  dataHomologacao: string | null;
+  publicacao: string | null;
+  fonte: string;
+  linhaBruta?: Record<string, unknown>;
 };
 
 export type CriterioVinculo =

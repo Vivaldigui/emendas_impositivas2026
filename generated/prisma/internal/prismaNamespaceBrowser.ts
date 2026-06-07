@@ -54,6 +54,7 @@ export const ModelName = {
   Vereador: 'Vereador',
   Emenda: 'Emenda',
   Empenho: 'Empenho',
+  Licitacao: 'Licitacao',
   EmendaEmpenhoVinculo: 'EmendaEmpenhoVinculo',
   AnaliseIaEmenda: 'AnaliseIaEmenda',
   EmendaEmpenhoRevisao: 'EmendaEmpenhoRevisao',
@@ -126,6 +127,31 @@ export const EmpenhoScalarFieldEnum = {
 } as const
 
 export type EmpenhoScalarFieldEnum = (typeof EmpenhoScalarFieldEnum)[keyof typeof EmpenhoScalarFieldEnum]
+
+
+export const LicitacaoScalarFieldEnum = {
+  id: 'id',
+  ano: 'ano',
+  numero: 'numero',
+  licitacao: 'licitacao',
+  modalidade: 'modalidade',
+  processoCompra: 'processoCompra',
+  objeto: 'objeto',
+  situacao: 'situacao',
+  criterio: 'criterio',
+  orgaoResp: 'orgaoResp',
+  valorEstimado: 'valorEstimado',
+  valorHomologado: 'valorHomologado',
+  razaoFornecedor: 'razaoFornecedor',
+  justificativa: 'justificativa',
+  dataHomologacao: 'dataHomologacao',
+  publicacao: 'publicacao',
+  fonte: 'fonte',
+  linhaBruta: 'linhaBruta',
+  importadoEm: 'importadoEm'
+} as const
+
+export type LicitacaoScalarFieldEnum = (typeof LicitacaoScalarFieldEnum)[keyof typeof LicitacaoScalarFieldEnum]
 
 
 export const EmendaEmpenhoVinculoScalarFieldEnum = {

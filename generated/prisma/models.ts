@@ -11,6 +11,7 @@
 export type * from './models/Vereador'
 export type * from './models/Emenda'
 export type * from './models/Empenho'
+export type * from './models/Licitacao'
 export type * from './models/EmendaEmpenhoVinculo'
 export type * from './models/AnaliseIaEmenda'
 export type * from './models/EmendaEmpenhoRevisao'

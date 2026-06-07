@@ -659,14 +659,6 @@ export type AnaliseIaEmendaUncheckedUpdateManyWithoutEmendaNestedInput = {
   deleteMany?: Prisma.AnaliseIaEmendaScalarWhereInput | Prisma.AnaliseIaEmendaScalarWhereInput[]
 }
 
-export type NullableIntFieldUpdateOperationsInput = {
-  set?: number | null
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
-}
-
 export type AnaliseIaEmendaCreateWithoutEmendaInput = {
   id?: string
   resultadoGeral: string

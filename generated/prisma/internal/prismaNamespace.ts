@@ -387,6 +387,7 @@ export const ModelName = {
   Vereador: 'Vereador',
   Emenda: 'Emenda',
   Empenho: 'Empenho',
+  Licitacao: 'Licitacao',
   EmendaEmpenhoVinculo: 'EmendaEmpenhoVinculo',
   AnaliseIaEmenda: 'AnaliseIaEmenda',
   EmendaEmpenhoRevisao: 'EmendaEmpenhoRevisao',
@@ -407,7 +408,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "vereador" | "emenda" | "empenho" | "emendaEmpenhoVinculo" | "analiseIaEmenda" | "emendaEmpenhoRevisao" | "coletaEmpenhosArquivo" | "coletaLog"
+    modelProps: "vereador" | "emenda" | "empenho" | "licitacao" | "emendaEmpenhoVinculo" | "analiseIaEmenda" | "emendaEmpenhoRevisao" | "coletaEmpenhosArquivo" | "coletaLog"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -630,6 +631,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.EmpenhoCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.EmpenhoCountAggregateOutputType> | number
+        }
+      }
+    }
+    Licitacao: {
+      payload: Prisma.$LicitacaoPayload<ExtArgs>
+      fields: Prisma.LicitacaoFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.LicitacaoFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicitacaoPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.LicitacaoFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicitacaoPayload>
+        }
+        findFirst: {
+          args: Prisma.LicitacaoFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicitacaoPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.LicitacaoFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicitacaoPayload>
+        }
+        findMany: {
+          args: Prisma.LicitacaoFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicitacaoPayload>[]
+        }
+        create: {
+          args: Prisma.LicitacaoCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicitacaoPayload>
+        }
+        createMany: {
+          args: Prisma.LicitacaoCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.LicitacaoCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicitacaoPayload>[]
+        }
+        delete: {
+          args: Prisma.LicitacaoDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicitacaoPayload>
+        }
+        update: {
+          args: Prisma.LicitacaoUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicitacaoPayload>
+        }
+        deleteMany: {
+          args: Prisma.LicitacaoDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.LicitacaoUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.LicitacaoUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicitacaoPayload>[]
+        }
+        upsert: {
+          args: Prisma.LicitacaoUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicitacaoPayload>
+        }
+        aggregate: {
+          args: Prisma.LicitacaoAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateLicitacao>
+        }
+        groupBy: {
+          args: Prisma.LicitacaoGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.LicitacaoGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.LicitacaoCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.LicitacaoCountAggregateOutputType> | number
         }
       }
     }
@@ -1093,6 +1168,31 @@ export const EmpenhoScalarFieldEnum = {
 export type EmpenhoScalarFieldEnum = (typeof EmpenhoScalarFieldEnum)[keyof typeof EmpenhoScalarFieldEnum]
 
 
+export const LicitacaoScalarFieldEnum = {
+  id: 'id',
+  ano: 'ano',
+  numero: 'numero',
+  licitacao: 'licitacao',
+  modalidade: 'modalidade',
+  processoCompra: 'processoCompra',
+  objeto: 'objeto',
+  situacao: 'situacao',
+  criterio: 'criterio',
+  orgaoResp: 'orgaoResp',
+  valorEstimado: 'valorEstimado',
+  valorHomologado: 'valorHomologado',
+  razaoFornecedor: 'razaoFornecedor',
+  justificativa: 'justificativa',
+  dataHomologacao: 'dataHomologacao',
+  publicacao: 'publicacao',
+  fonte: 'fonte',
+  linhaBruta: 'linhaBruta',
+  importadoEm: 'importadoEm'
+} as const
+
+export type LicitacaoScalarFieldEnum = (typeof LicitacaoScalarFieldEnum)[keyof typeof LicitacaoScalarFieldEnum]
+
+
 export const EmendaEmpenhoVinculoScalarFieldEnum = {
   id: 'id',
   emendaId: 'emendaId',
@@ -1441,6 +1541,7 @@ export type GlobalOmitConfig = {
   vereador?: Prisma.VereadorOmit
   emenda?: Prisma.EmendaOmit
   empenho?: Prisma.EmpenhoOmit
+  licitacao?: Prisma.LicitacaoOmit
   emendaEmpenhoVinculo?: Prisma.EmendaEmpenhoVinculoOmit
   analiseIaEmenda?: Prisma.AnaliseIaEmendaOmit
   emendaEmpenhoRevisao?: Prisma.EmendaEmpenhoRevisaoOmit

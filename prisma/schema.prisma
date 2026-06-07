@@ -62,6 +62,31 @@ model Empenho {
   @@index([dotacao])
 }
 
+model Licitacao {
+  id              String    @id
+  ano             Int
+  numero          Int
+  licitacao       String?
+  modalidade      String?
+  processoCompra  Int?
+  objeto          String?   @db.Text
+  situacao        String?
+  criterio        String?   @db.Text
+  orgaoResp       String?
+  valorEstimado   Decimal   @default(0) @db.Decimal(16, 2)
+  valorHomologado Decimal   @default(0) @db.Decimal(16, 2)
+  razaoFornecedor String?   @db.Text
+  justificativa   String?   @db.Text
+  dataHomologacao DateTime?
+  publicacao      DateTime?
+  fonte           String
+  linhaBruta      Json?
+  importadoEm     DateTime  @default(now())
+
+  @@index([processoCompra])
+  @@index([ano, numero])
+}
+
 model EmendaEmpenhoVinculo {
   id                  String                   @id @default(cuid())
   emendaId            String

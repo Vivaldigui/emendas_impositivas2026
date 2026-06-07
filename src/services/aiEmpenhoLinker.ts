@@ -20,6 +20,10 @@ import {
   gerarCandidatosDeterministicos,
 } from "@/services/emendaMatcher";
 import { loadAllEmpenhos } from "@/services/empenhosStorage";
+import {
+  loadObjetosLicitacaoByProcesso,
+  objetoParaProcesso,
+} from "@/services/licitacoesStorage";
 import { prisma } from "../../lib/prisma";
 
 export const AI_PROMPT_VERSION = "empenho-linker-v1";
@@ -983,6 +987,7 @@ function essentialEmpenho(empenho: EmpenhoRecord) {
     fonteRecurso: empenho.fonteRecurso,
     ficha: empenho.ficha,
     processoCompra: empenho.processoCompra,
+    objetoLicitacao: empenho.objetoLicitacao ?? null,
     valorEmpenhado: empenho.valorEmpenhado,
     valorLiquidado: empenho.valorLiquidado,
     valorPago: empenho.valorPago,
@@ -1193,9 +1198,10 @@ async function upsertEmpenho(empenho: EmpenhoRecord) {
 }
 
 async function loadEmpenhosForAnalysis() {
-  const [stored, persisted] = await Promise.all([
+  const [stored, persisted, objetosLicitacao] = await Promise.all([
     loadAllEmpenhos(),
     prisma.empenho.findMany().catch(() => []),
+    loadObjetosLicitacaoByProcesso(),
   ]);
   const byId = new Map<string, EmpenhoRecord>();
 
@@ -1205,6 +1211,16 @@ async function loadEmpenhosForAnalysis() {
 
   for (const empenho of stored) {
     byId.set(empenho.id, empenho);
+  }
+
+  // Enriquece cada empenho com o objeto da licitacao do mesmo processoCompra.
+  if (objetosLicitacao.size) {
+    for (const empenho of byId.values()) {
+      const objeto = objetoParaProcesso(objetosLicitacao, empenho.ano, empenho.processoCompra);
+      if (objeto) {
+        empenho.objetoLicitacao = objeto;
+      }
+    }
   }
 
   return Array.from(byId.values());

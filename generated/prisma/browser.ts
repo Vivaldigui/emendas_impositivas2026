@@ -33,6 +33,11 @@ export type Emenda = Prisma.EmendaModel
  */
 export type Empenho = Prisma.EmpenhoModel
 /**
+ * Model Licitacao
+ * 
+ */
+export type Licitacao = Prisma.LicitacaoModel
+/**
  * Model EmendaEmpenhoVinculo
  * 
  */

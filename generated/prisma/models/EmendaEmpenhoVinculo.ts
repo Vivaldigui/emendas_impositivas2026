@@ -801,10 +801,6 @@ export type EmendaEmpenhoVinculoUpdatecamposUsadosInput = {
   push?: string | string[]
 }
 
-export type DateTimeFieldUpdateOperationsInput = {
-  set?: Date | string
-}
-
 export type EmendaEmpenhoVinculoCreateNestedOneWithoutRevisoesInput = {
   create?: Prisma.XOR<Prisma.EmendaEmpenhoVinculoCreateWithoutRevisoesInput, Prisma.EmendaEmpenhoVinculoUncheckedCreateWithoutRevisoesInput>
   connectOrCreate?: Prisma.EmendaEmpenhoVinculoCreateOrConnectWithoutRevisoesInput

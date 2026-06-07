@@ -232,6 +232,8 @@ function scoreEmpenho(emenda: Emenda, empenho: EmpenhoRecord): ScoreResult | nul
     normalizeText(
       [
         empenho.historico,
+        // Objeto da licitacao do mesmo processo: enriquece empenhos genericos.
+        empenho.objetoLicitacao,
         empenho.secretaria,
         empenho.unidadeOrcamentaria,
         empenho.fornecedor,

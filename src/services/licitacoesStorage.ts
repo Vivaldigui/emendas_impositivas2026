@@ -1,6 +1,69 @@
+import licitacoes2026 from "@/data/licitacoes-2026.json";
+import { parseLicitacoes } from "@/collectors/sonner/licitacoesParser";
 import type { LicitacaoRecord } from "@/lib/types";
 import type { Prisma } from "../../generated/prisma/client";
 import { isDatabaseConfigured, prisma } from "../../lib/prisma";
+
+const CREATE_TABLE_SQL = `
+CREATE TABLE IF NOT EXISTS "Licitacao" (
+  "id" TEXT NOT NULL,
+  "ano" INTEGER NOT NULL,
+  "numero" INTEGER NOT NULL,
+  "licitacao" TEXT,
+  "modalidade" TEXT,
+  "processoCompra" INTEGER,
+  "objeto" TEXT,
+  "situacao" TEXT,
+  "criterio" TEXT,
+  "orgaoResp" TEXT,
+  "valorEstimado" DECIMAL(16,2) NOT NULL DEFAULT 0,
+  "valorHomologado" DECIMAL(16,2) NOT NULL DEFAULT 0,
+  "razaoFornecedor" TEXT,
+  "justificativa" TEXT,
+  "dataHomologacao" TIMESTAMP(3),
+  "publicacao" TIMESTAMP(3),
+  "fonte" TEXT NOT NULL,
+  "linhaBruta" JSONB,
+  "importadoEm" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "Licitacao_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX IF NOT EXISTS "Licitacao_processoCompra_idx" ON "Licitacao"("processoCompra");
+CREATE INDEX IF NOT EXISTS "Licitacao_ano_numero_idx" ON "Licitacao"("ano", "numero");
+`;
+
+let tableEnsured = false;
+let seedAttempted = false;
+
+/** Cria a tabela Licitacao se nao existir (idempotente). */
+export async function ensureLicitacaoTable(): Promise<boolean> {
+  if (!isDatabaseConfigured()) return false;
+  if (tableEnsured) return true;
+  try {
+    await prisma.$executeRawUnsafe(CREATE_TABLE_SQL);
+    tableEnsured = true;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Carrega as licitacoes de 2026 embutidas, uma unica vez, se a tabela estiver vazia. */
+export async function ensureLicitacoesSeeded(): Promise<void> {
+  if (!isDatabaseConfigured() || seedAttempted) return;
+  seedAttempted = true;
+  const ok = await ensureLicitacaoTable();
+  if (!ok) return;
+  try {
+    const total = await prisma.licitacao.count();
+    if (total > 0) return;
+    const { registros } = parseLicitacoes(licitacoes2026);
+    if (registros.length) {
+      await syncLicitacoesToDatabase(registros);
+    }
+  } catch {
+    // sem permissao/sem tabela — segue sem enriquecimento
+  }
+}
 
 export type LicitacaoSyncResumo = {
   ok: boolean;
@@ -46,6 +109,8 @@ export async function syncLicitacoesToDatabase(
     return { ok: false, recebidas: registros.length, gravadas: 0, total: 0, erro: "DATABASE_URL nao configurada." };
   }
 
+  await ensureLicitacaoTable();
+
   try {
     let gravadas = 0;
     for (const registro of registros) {
@@ -80,6 +145,8 @@ export async function loadObjetosLicitacaoByProcesso(): Promise<Map<string, stri
   if (!isDatabaseConfigured()) {
     return mapa;
   }
+
+  await ensureLicitacoesSeeded();
 
   try {
     const rows = await prisma.licitacao.findMany({
@@ -119,6 +186,7 @@ export function objetoParaProcesso(
 
 export async function contarLicitacoes(): Promise<number> {
   if (!isDatabaseConfigured()) return 0;
+  await ensureLicitacoesSeeded();
   try {
     return await prisma.licitacao.count();
   } catch {
